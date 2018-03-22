@@ -11,9 +11,13 @@ namespace TestApp
     {
         static void Main(string[] args)
         {
-            HouseFinder hFinder = HouseFinder.GetInstance();
-            Console.WriteLine(hFinder.Parse("361325, КАБАРДИНО - БАЛКАРСКАЯ РЕСП, УРВАНСКИЙ Р - Н, СТАРЫЙ ЧЕРЕК С, ПОЧТОВАЯ УЛ, ДОМ № 10"));
+            AddressTruncator truncator = AddressTruncator.GetInstance();
 
+            string source = @"361325, КАБАРДИНО - БАЛКАРСКАЯ РЕСП, УРВАНСКИЙ Р - Н, СТАРЫЙ ЧЕРЕК С, ПОЧТОВАЯ УЛ, ДОМ № 10";
+
+            Console.WriteLine("Исходный: " + source);
+            Console.WriteLine("Дом: "+truncator.TruncHouse(source));
+            Console.WriteLine("PostalCode: " + truncator.TruncPostalCode(source));
 
             Console.ReadKey();
            
