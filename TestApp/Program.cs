@@ -12,12 +12,17 @@ namespace TestApp
         static void Main(string[] args)
         {
             AddressTruncator truncator = AddressTruncator.GetInstance();
+            AddressParser parser = new AddressParser();
 
-            string source = @"361325, КАБАРДИНО - БАЛКАРСКАЯ РЕСП, УРВАНСКИЙ Р - Н, СТАРЫЙ ЧЕРЕК С, ПОЧТОВАЯ УЛ, ДОМ № 10";
+   
+            string source = @"Самарская обл., Самара, Дыбенко ул., 36А";
 
             Console.WriteLine("Исходный: " + source);
-            Console.WriteLine("Дом: "+truncator.TruncHouse(source));
-            Console.WriteLine("PostalCode: " + truncator.TruncPostalCode(source));
+            // Console.WriteLine("Дом: "+truncator.TruncHouse(source));
+            // Console.WriteLine("PostalCode: " + truncator.TruncPostalCode(source));
+            parser.Parse(source);
+
+            Console.WriteLine("Область: " + truncator.TruncRegion(source));
 
             Console.ReadKey();
            
