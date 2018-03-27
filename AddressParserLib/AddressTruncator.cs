@@ -30,7 +30,6 @@ namespace AddressParserLib
             if (postalRegex.IsMatch(source))
                 return postalRegex.Match(source).Value;
             return null;
-
         }
 
         public string TruncHouse(string source, float searchRatio = 2 / 3f)
