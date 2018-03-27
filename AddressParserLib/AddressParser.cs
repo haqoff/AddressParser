@@ -9,23 +9,27 @@ namespace AddressParserLib
 {
     public sealed class AddressParser
     {
-        public static void Parse(string source, ParserOptions options)
-        {
-            foreach (var item in source.Split(options.Splitters))
-            {
-                if (item == "")
-                    continue;
+        private AddressTruncator truncator;
+        private List<AddressObjectType> objectTypes;
 
-                item.IndexOf()
-            }
+        public AddressParser(List<AddressObjectType> objectTypes)
+        {
+            truncator = AddressTruncator.GetInstance();
+        }
+        public void Parse(string source)
+        {
+     
         }
 
-    }
+        private List<AddressObject> PreparseAddress(string source)
+        {
+            return null;
+        }
 
-    public class ParserOptions
-    {
-        public string[] AddressTypePatterns { get; set; }
-        public bool CaseSensetive { get; set; }
-        public char[] Splitters { get; set; }
+        private List<FullAddress> GetAddressVersions(List<AddressObject> preparsedObjects, string PostalCode = null)
+        {
+            return null;
+        }
+
     }
 }
