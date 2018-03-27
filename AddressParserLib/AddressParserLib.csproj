@@ -43,15 +43,17 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AddressObject.cs" />
+    <Compile Include="AO\AddressObject.cs" />
     <Compile Include="AddressParser.cs" />
     <Compile Include="AddressTruncator.cs" />
-    <Compile Include="AddressVersion.cs" />
-    <Compile Include="ObjectType.cs" />
+    <Compile Include="AO\FullAddress.cs" />
+    <Compile Include="AO\AddressObjectType.cs" />
+    <Compile Include="AO\ObjectLevel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

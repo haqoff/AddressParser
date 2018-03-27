@@ -10,11 +10,10 @@ namespace AddressParserLib
     public sealed class AddressParser
     {
         private AddressTruncator truncator;
-        private string[] AOTypePatterns;
+        private List<AddressObjectType> objectTypes;
 
-        public AddressParser(string[] AOTypePatterns)
+        public AddressParser(List<AddressObjectType> objectTypes)
         {
-            this.AOTypePatterns = AOTypePatterns;
             truncator = AddressTruncator.GetInstance();
         }
         public void Parse(string source)
@@ -24,34 +23,12 @@ namespace AddressParserLib
 
         private List<AddressObject> PreparseAddress(string source)
         {
-            var preparsedObjects = new List<AddressObject>();
-
-            var postalCode = truncator.TruncPostalCode(source);
-            if (postalCode != null)
-            {
-                source = source.Replace(postalCode.Name, "");
-                preparsedObjects.Add(postalCode);
-;           }
-
-            var houseAndRoom = truncator.TruncHouseAndRoom(source);
-            if (houseAndRoom.house != null)
-            {
-                source = source.Replace(houseAndRoom.subString, "");
-                preparsedObjects.Add();
-            }
-
-            string region = truncator.TruncRegion(source);
-            if (region != null)
-            {
-                preparsedObjects.Add(new AddressObject(region, ObjectType.Other));
-            }
-
-            return preparsedObjects;
+            return null;
         }
 
-        private List<AddressVersion> GetAddressVersions(List<AddressObject> preparsedObjects)
+        private List<FullAddress> GetAddressVersions(List<AddressObject> preparsedObjects, string PostalCode = null)
         {
-
+            return null;
         }
 
     }
