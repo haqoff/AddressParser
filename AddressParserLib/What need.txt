@@ -1,0 +1,15 @@
+﻿//1.В Utils создать класс RegexGroup для работы с Regex
+ctor(List<AOType> параметры группы);
+
+методы:
+public List<Coll> Execute(string regexPattern)
+{
+	Regex();
+}
+
+
+struct Coll:{
+	Match,
+	AOType
+}
+//

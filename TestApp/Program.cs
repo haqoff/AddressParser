@@ -11,21 +11,19 @@ namespace TestApp
     {
         static void Main(string[] args)
         {
-            AddressTruncator truncator = AddressTruncator.GetInstance();
-            AddressParser parser = new AddressParser();
+            var types = new List<AddressObjectType>();
+            types.Add(new AddressObjectType("", "д",AddressObjectType.GenderNoun.Masculine, 8));
+            types.Add(new AddressObjectType("", "кв", AddressObjectType.GenderNoun.Neuter, 9));
 
-   
-            string source = @"Самарская обл., Самара, Дыбенко ул., 36А";
+            var parser = new AddressParser(types);
 
-            Console.WriteLine("Исходный: " + source);
-            // Console.WriteLine("Дом: "+truncator.TruncHouse(source));
-            // Console.WriteLine("PostalCode: " + truncator.TruncPostalCode(source));
-            parser.Parse(source);
+            parser.Parse(@"Самарская обл., Самара, 5 sыбенко ул.,36     ЛИТЕР А ASD");
 
-            Console.WriteLine("Область: " + truncator.TruncRegion(source));
+            parser.Parse(@"140073, МО, пос. Томилино,23/7 км Ново-Рязанского шоссе,17 лит.А кв2");
 
-            Console.ReadKey();
-           
+            parser.Parse("428023, ЧУВАШСКАЯ РЕСПУБЛИКА- ЧУВАШИЯ, ЧЕБОКСАРЫ Г, КОМПОЗИТОРА МАКСИМОВА УЛ, ДОМ № 13");
+
+            Console.ReadKey();       
         }
     }
 }

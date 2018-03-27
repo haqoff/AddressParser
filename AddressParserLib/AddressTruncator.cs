@@ -8,20 +8,31 @@ namespace AddressParserLib
 {
     internal class AddressTruncator
     {
-        private Regex houseRegex;
-        private Regex postalRegex;
-        private Regex[] regionRegex;
+        private const string litterPattern = @"\s*([а-я](?=[^а-я]|$))*";
+        private const string uniPattern = @"((?<={0}.*?)[0-9]+(\/[0-9]+)*)" + litterPattern;
 
         private List<AddressObjectType> objectTypes;
 
+        private Regex buildingRegex;
+        private Regex buildingLitterRegex;
+        private Regex anyNumberRegex;
+
+        private Regex roomRegex;
+        private Regex postalRegex;
 
         internal AddressTruncator(List<AddressObjectType> objectTypes)
         {
             this.objectTypes = objectTypes;
 
-            houseRegex = new Regex(@"([0-9]+)|((д\.| дом).*[0-9]+.*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+            string fullHouseTypesPattern = String.Format(uniPattern, GetPatterns(ObjectLevel.House));
+            string fullRoomTypesPattern = String.Format(uniPattern, GetPatterns(ObjectLevel.Room));
+
+            buildingRegex = new Regex(fullHouseTypesPattern, RegexOptions.Compiled | RegexOptions.IgnoreCase);
+            buildingLitterRegex = new Regex(@"(?<=[0-9]+[^а-я]*)ли.*?(\.| +)(?=[а-я])", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+            roomRegex = new Regex(fullRoomTypesPattern, RegexOptions.Compiled | RegexOptions.IgnoreCase);
+            anyNumberRegex = new Regex(@"[0-9]+"+ litterPattern, RegexOptions.Compiled | RegexOptions.IgnoreCase);
             postalRegex = new Regex(@"[0-9]{6}", RegexOptions.Compiled);
-            regionRegex = new Regex(@"(?<=\W|^).+?ая(?=((\W)+о))", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.RightToLeft);
+            // regionRegex = new Regex(@"(?<=\W|^).+?ая(?=((\W)+о))", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.RightToLeft);
         }
 
 
@@ -29,25 +40,58 @@ namespace AddressParserLib
         internal string TruncPostalCode(string source) => postalRegex.Match(source).Value;
 
 
-        /// <returns>Вовзращает AddressObject номера здания/сооружения и AddressObject номера помещения.</returns>
+        /// <returns>Возвращает AddressObject номера здания/сооружения и AddressObject номера помещения.</returns>
         internal (AddressObject buildingNum, AddressObject roomNum) TruncBuildingAndRoomNum(string source)
         {
-            //дом: здесь сначала ищем по патернам данным нам, если не находим, то ищем просто любое число с символом
-            return (null, null);
-            //после чего ищем опять по патерну квартиру, если не находим то берём любое число если есть.
+            source = buildingLitterRegex.Replace(source, "");
+            string buildingNum = buildingRegex.Match(source).Value;
+            if (buildingNum!="")
+                source = source.Replace(buildingNum, "");
+
+            string roomNum = roomRegex.Match(source).Value;
+            if (roomNum != "")
+                source = source.Replace(roomNum, "");
+
+            if (buildingNum == "")
+            {
+                //пока что просто берём самое последнее число в строке, но в будущем нужно будет на всякий сделать проверку
+                if (anyNumberRegex.IsMatch(source))
+                {
+                    var matches = anyNumberRegex.Matches(source);
+                    buildingNum = matches[matches.Count - 1].Value;
+                    source = source.Replace(buildingNum, "");
+                }
+
+            }
+
+            AddressObject bNum = null;
+            AddressObject rNum = null;
+
+            if (buildingNum != "")
+            {
+                bNum = new AddressObject(buildingNum.Replace(" ", ""));
+                if (roomNum != "")
+                {
+                    rNum = new AddressObject(roomNum.Replace(" ", ""));
+                }
+            }
+
+            return (bNum, rNum);
         }
 
 
-        private string GetHousePatterns(AddressObjectType.GenderNoun gender)
+
+
+        private string GetPatterns(ObjectLevel level)
         {
             StringBuilder sb = new StringBuilder();
 
             sb.Append("(");
             foreach (var obj in objectTypes)
             {
-                if(obj.Level == (int) ObjectLevel.House && obj.GenderType == gender)
+                if (obj.Level == (int)level)
                 {
-                    if(sb.ToString() == "(")
+                    if (sb.ToString() == "(")
                     {
                         sb.Append(obj.AbbreviatedName);
                         continue;
@@ -56,7 +100,7 @@ namespace AddressParserLib
                     sb.Append(obj.AbbreviatedName);
                 }
             }
-   
+
             sb.Append(")");
 
             return sb.ToString();

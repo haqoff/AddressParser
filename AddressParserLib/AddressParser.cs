@@ -10,15 +10,20 @@ namespace AddressParserLib
     public sealed class AddressParser
     {
         private AddressTruncator truncator;
-        private List<AddressObjectType> objectTypes;
 
         public AddressParser(List<AddressObjectType> objectTypes)
         {
-            truncator = AddressTruncator.GetInstance();
+            truncator = new AddressTruncator(objectTypes);
         }
         public void Parse(string source)
         {
-     
+            Console.WriteLine("Исходный: " + source);
+            
+            Console.WriteLine("Индекс: {0}", truncator.TruncPostalCode(source));
+            Console.WriteLine("Дом: {0}", truncator.TruncBuildingAndRoomNum(source).buildingNum?.Name);
+            Console.WriteLine("Кв: {0}", truncator.TruncBuildingAndRoomNum(source).roomNum?.Name);
+            Console.WriteLine("");
+
         }
 
         private List<AddressObject> PreparseAddress(string source)
