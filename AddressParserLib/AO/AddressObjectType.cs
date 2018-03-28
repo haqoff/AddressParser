@@ -28,7 +28,7 @@ namespace AddressParserLib
         /// </summary>
         public GenderNoun GenderType { get; private set; }
 
-        public AddressObjectType(string fullName, string abbreviatedName, GenderNoun genderType, int level)
+        public AddressObjectType(string fullName, string abbreviatedName, int level, GenderNoun genderType = GenderNoun.Uknown)
         {
             FullName = fullName;
             AbbreviatedName = abbreviatedName;
@@ -38,6 +38,7 @@ namespace AddressParserLib
 
         public enum GenderNoun
         {
+            Uknown,     //Неизвестно
             Fiminine,   //Женский
             Masculine,  //Мужской
             Neuter      //Средний

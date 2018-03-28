@@ -1,40 +1,57 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace AddressParserLib
 {
     public sealed class AddressParser
     {
         private AddressTruncator truncator;
+        private StringBuilder sb;
+
 
         public AddressParser(List<AddressObjectType> objectTypes)
         {
             truncator = new AddressTruncator(objectTypes);
+            sb = new StringBuilder();
         }
         public void Parse(string source)
         {
-            Console.WriteLine("Исходный: " + source);
-            
-            Console.WriteLine("Индекс: {0}", truncator.TruncPostalCode(source));
-            Console.WriteLine("Дом: {0}", truncator.TruncBuildingAndRoomNum(source).buildingNum?.Name);
-            Console.WriteLine("Кв: {0}", truncator.TruncBuildingAndRoomNum(source).roomNum?.Name);
-            Console.WriteLine("");
+            Console.WriteLine("Исходная: {0}", source);
+            var preparsedObjects = new List<AddressObject>();
 
-        }
+            string postalCode = truncator.TruncPostalCode(source);
 
-        private List<AddressObject> PreparseAddress(string source)
-        {
-            return null;
-        }
+            var (buildingNum, roomNum, clearedString) = truncator.TruncBuildingAndRoomNum(source);
+            source = clearedString;
 
-        private List<FullAddress> GetAddressVersions(List<AddressObject> preparsedObjects, string PostalCode = null)
-        {
-            return null;
+            if (buildingNum != null)
+                preparsedObjects.Add(buildingNum);
+            if (roomNum != null)
+                preparsedObjects.Add(roomNum);
+
+            foreach (var item in truncator.Split(source))
+            {
+                Console.WriteLine("------");
+                Console.WriteLine("Вариант:");
+
+                item.AObjects.AddRange(preparsedObjects);
+                foreach (var obj in item.AObjects)
+                {
+                    Console.Write(obj.Name + "-->");
+                }
+                Console.WriteLine();
+                Console.WriteLine("----");
+            }
         }
+        
+
+     
 
     }
+
+
+
 }
+
