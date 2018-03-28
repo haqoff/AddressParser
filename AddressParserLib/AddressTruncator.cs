@@ -7,6 +7,9 @@ using System.Text.RegularExpressions;
 
 namespace AddressParserLib
 {
+    /// <summary>
+    /// 
+    /// </summary>
     internal class AddressTruncator
     {
         private const string litterPattern = @"\s*([а-я](?=[^а-я]|$))*";
@@ -21,19 +24,19 @@ namespace AddressParserLib
         private string fullRoomTypesPattern;
         private string AOTypesPattern;
 
-        private List<AddressObjectType> objectTypes;
+        private AOTypeDictionary typeDictionary;
         private RegexGroup regexGroup;
         private StringBuilder sb;
 
-        internal AddressTruncator(List<AddressObjectType> objectTypes)
+        internal AddressTruncator(AOTypeDictionary typeDictionary)
         {
-            this.objectTypes = objectTypes;
+            this.typeDictionary = typeDictionary;
             sb = new StringBuilder();
 
-            fullHouseTypesPattern = String.Format(uniPattern, GetAOTypesPattern(ObjectLevel.House));
-            fullRoomTypesPattern = String.Format(uniPattern, GetAOTypesPattern(ObjectLevel.Room));
+            fullHouseTypesPattern = String.Format(uniPattern, typeDictionary.GetRegexMultiPattern(ObjectLevel.House));
+            fullRoomTypesPattern = String.Format(uniPattern, typeDictionary.GetRegexMultiPattern(ObjectLevel.Room));
 
-            AOTypesPattern = String.Format(@"(?<=[^а-я]|^){0}.*?((?=[^а-я]|$))", GetAOTypesPattern());
+            AOTypesPattern = String.Format(@"(?<=[^а-я]|^){0}.*?((?=[^а-я]|$))", typeDictionary.GetRegexMultiPattern());
 
             regexGroup = new RegexGroup(RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
@@ -43,20 +46,39 @@ namespace AddressParserLib
         }
 
 
-        /// <returns>Возвращает индекс из исходной строки.</returns>
-        internal string TruncPostalCode(string source) => regexGroup.GetMatch(postalPattern, source).Value;
 
-        /// <returns>Возвращает AddressObject номера здания/сооружения и AddressObject номера помещения.</returns>
-        internal (AddressObject buildingNum, AddressObject roomNum, string clearedString) TruncBuildingAndRoomNum(string source)
+
+        /// <summary>
+        /// Очищает и возвращает индекс из исходной строки, если он найден.
+        /// </summary>
+        /// <param name="source"></param>
+        /// <returns></returns>
+        internal string TruncPostalCode(ref string source)
+        {
+            string value = regexGroup.GetMatch(postalPattern, source).Value;
+            if (value != "")
+                source = source.Replace(value, "");
+
+            return value;
+        }
+
+        /// <summary>
+        /// Очищает и возвращает AddressObject номера здания/сооружения и AddressObject номера помещения.
+        /// </summary>
+        /// <param name="source"></param>
+        /// <returns></returns>
+        internal (AddressObject buildingNum, AddressObject roomNum) TruncBuildingAndRoomNum(ref string source)
         {
             source = regexGroup.Replace(buildingLitterPattern, source, "");
             string buildingNum = regexGroup.GetMatch(fullHouseTypesPattern, source).Value;
             if (buildingNum != "")
                 source = source.Replace(buildingNum, "");
 
-            string roomNum = regexGroup.GetMatch(fullRoomTypesPattern, source).Value;
+
+            var roomMatch = regexGroup.GetMatch(fullRoomTypesPattern, source);
+            string roomNum = roomMatch.Value;
             if (roomNum != "")
-                source = source.Replace(roomNum, "");
+                source = source.Remove(roomMatch.Index, roomMatch.Length);
 
             if (buildingNum == "")
             {
@@ -64,8 +86,9 @@ namespace AddressParserLib
                 if (regexGroup.IsMatch(simpleHousePattern, source))
                 {
                     var matches = regexGroup.GetMatches(simpleHousePattern, source);
-                    buildingNum = matches[matches.Count - 1].Value;
-                    source = source.Replace(buildingNum, "");
+                    var buildingMatch = matches[matches.Count - 1];
+                    buildingNum = buildingMatch.Value;
+                    source = source.Remove(buildingMatch.Index, buildingMatch.Length);
                 }
             }
 
@@ -81,27 +104,16 @@ namespace AddressParserLib
                 }
             }
 
-            return (bNum, rNum, source);
+            return (bNum, rNum);
         }
 
 
+        /// <summary>
+        /// Очищает строку от всех названий типов обьектов.
+        /// </summary>
+        /// <param name="source"></param>
+        /// <returns></returns>
         public string ClearString(string source) => regexGroup.Replace(AOTypesPattern, source, "");
-
-
-        private string GetAOTypesPattern()
-        {
-            StringBuilder sb = new StringBuilder();
-            sb.Append("(");
-            foreach (var obj in objectTypes)
-            {
-                if (sb.ToString() != "(")
-                    sb.Append("|");
-
-                sb.Append(obj.AbbreviatedName);
-            }
-            sb.Append(")");
-            return sb.ToString();
-        }
 
         public List<Variant> Split(string source)
         {
@@ -130,33 +142,42 @@ namespace AddressParserLib
                     //перебираем clearstring по вариантам
                     curVariants = GetVariants(clearedString);
                 }
-           
-                    res = Variant.Combine(res, curVariants);
+
+                res = Variant.Combine(res, curVariants);
             }
             return res;
         }
 
-        private List<Variant> GetVariants(string source)
+        public List<Variant> GetVariants(string source)
         {
+            var result = new List<Variant>();
+
             source = source.Trim(' ');
 
             char[] splitters = { ' ' };
             var clearSource = new List<String>(source.Split(splitters));
 
             int ubound = clearSource.Count - 1;
-            for (int i = 0; i < ubound; i++)
+            for (int i = 0; i <= ubound; i++)
             {
-                if (clearSource[i] == "")
+                if (clearSource[i] == "" && clearSource[i] == " ")
                 {
                     clearSource.RemoveAt(i);
                     ubound--;
                 }
             }
 
+            if (clearSource.Count == 1)
+            {
+                var n = new Variant();
+
+                n.AObjects.Add(new AddressObject(clearSource[0]));
+                result.Add(n);
+            }
+
             int countVariants = (clearSource.Count - 1) * 2;
             string binaryMask;
             string additZero;
-            var result = new List<Variant>();
 
             for (int i = 0; i < countVariants; i++)
             {
@@ -186,27 +207,6 @@ namespace AddressParserLib
             }
 
             return result;
-        }
-
-
-        private string GetAOTypesPattern(ObjectLevel level)
-        {
-            StringBuilder sb = new StringBuilder();
-
-            sb.Append("(");
-            foreach (var obj in objectTypes)
-            {
-                if (obj.Level == (int)level)
-                {
-                    if (sb.ToString() != "(")
-                        sb.Append("|");
-                    sb.Append(obj.AbbreviatedName);
-                }
-            }
-
-            sb.Append(")");
-
-            return sb.ToString();
         }
     }
 }

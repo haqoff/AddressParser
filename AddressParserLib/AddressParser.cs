@@ -1,4 +1,5 @@
-﻿using System;
+﻿using AddressParserLib.AO;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -11,32 +12,29 @@ namespace AddressParserLib
         private StringBuilder sb;
 
 
-        public AddressParser(List<AddressObjectType> objectTypes)
+        public AddressParser(AOTypeDictionary dictionary)
         {
-            truncator = new AddressTruncator(objectTypes);
+            truncator = new AddressTruncator(dictionary);
             sb = new StringBuilder();
         }
-        public void Parse(string source)
+
+        /// <summary>
+        /// Возвращает все возможные варианты адресов из строки.
+        /// </summary>
+        /// <param name="source"></param>
+        public List<FullAddress> Parse(string source)
         {
-            Console.WriteLine("Исходная: {0}", source);
-            var preparsedObjects = new List<AddressObject>();
+            var obviousObjects = ParseObvious(ref source).obviousObjects;
 
-            string postalCode = truncator.TruncPostalCode(source);
 
-            var (buildingNum, roomNum, clearedString) = truncator.TruncBuildingAndRoomNum(source);
-            source = clearedString;
-
-            if (buildingNum != null)
-                preparsedObjects.Add(buildingNum);
-            if (roomNum != null)
-                preparsedObjects.Add(roomNum);
+            
 
             foreach (var item in truncator.Split(source))
             {
                 Console.WriteLine("------");
                 Console.WriteLine("Вариант:");
 
-                item.AObjects.AddRange(preparsedObjects);
+                item.AObjects.AddRange(obviousObjects);
                 foreach (var obj in item.AObjects)
                 {
                     Console.Write(obj.Name + "-->");
@@ -44,14 +42,30 @@ namespace AddressParserLib
                 Console.WriteLine();
                 Console.WriteLine("----");
             }
+            return null;
         }
-        
 
-     
+
+        /// <summary>
+        /// Очищает и возвращает только однозначные и очевидные обьекты, которые точно являются правильными, из строки.
+        /// </summary>
+        /// <param name="source"></param>
+        public (List<AddressObject> obviousObjects, string postalCode) ParseObvious(ref string source)
+        {
+            var preparsedObjects = new List<AddressObject>();
+
+            string postalCode = truncator.TruncPostalCode(ref source);
+
+            var (buildingNum, roomNum) = truncator.TruncBuildingAndRoomNum(ref source);
+
+            if (buildingNum != null)
+                preparsedObjects.Add(buildingNum);
+            if (roomNum != null)
+                preparsedObjects.Add(roomNum);
+
+            return (preparsedObjects, postalCode);
+        }
 
     }
-
-
-
 }
 

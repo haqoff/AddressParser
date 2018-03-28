@@ -1,4 +1,5 @@
 ﻿using AddressParserLib;
+using AddressParserLib.AO;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,24 +12,29 @@ namespace TestApp
     {
         static void Main(string[] args)
         {
-            var types = new List<AddressObjectType>();
-            types.Add(new AddressObjectType("", "д", 8));
-            types.Add(new AddressObjectType("", "кв", 9));
-            types.Add(new AddressObjectType("", "пос.", 9));
-            types.Add(new AddressObjectType("", "ул", 9));
-            types.Add(new AddressObjectType("", "респ", 9));
-            types.Add(new AddressObjectType("", "обл", 1));
-            types.Add(new AddressObjectType("", "г", 1));
+            var dictionary = new AOTypeDictionary();
 
-            var parser = new AddressParser(types);
+            dictionary.Add("кв",9);
+            dictionary.Add("д", 8);
+            dictionary.Add("пос.", 4);
+            dictionary.Add("ул", 7);
+            dictionary.Add("респ", 1);
+            dictionary.Add("обл", 1);
+            dictionary.Add("г", 4);
+            dictionary.Add("шос",7);
+            dictionary.Add("д", 7);
 
-            //  parser.Parse(@"Самарская обл., Самара, 5 sыбенко ул.,36     ЛИТЕР А ASD");
 
-            //  parser.Parse(@"140073, МО, пос. Томилино,23/7 км Ново-Рязанского шоссе,17 лит.А кв2");
+            var parser = new AddressParser(dictionary);
 
-            //  parser.Parse("428023, ЧУВАШСКАЯ РЕСПУБЛИКА- ЧУВАШИЯ, ЧЕБОКСАРЫ Г, КОМПОЗИТОРА МАКСИМОВА УЛ, ДОМ № 13 123213123" );
+            parser.Parse(@"Самарская обл., Самара, 5 sыбенко ул.,36     ЛИТЕР А ASD");
 
-            parser.Parse("620017, СВЕРДЛОВСКАЯ ОБЛ, ЕКАТЕРИНБУРГ Г, ЭЛЕКТРИКОВ УЛ, ДОМ № 23");
+            parser.Parse(@"140073, МО, Томилино,23/7 км Ново-Рязанского шоссе,17 лит. А кв2");
+
+            parser.Parse("428023, ЧУВАШСКАЯ РЕСПУБЛИКА- ЧУВАШИЯ, ЧЕБОКСАРЫ Г, КОМПОЗИТОРА МАКСИМОВА УЛ, ДОМ № 13 123213123" );
+
+            parser.Parse("620017, ВЛАДИМИРСКАЯ ОБЛАСТЬ МУРОМ УЛИЦА ФИЛАТОВА 7");
+
 
             Console.ReadKey();       
         }

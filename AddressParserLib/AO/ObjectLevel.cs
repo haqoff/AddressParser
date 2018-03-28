@@ -2,6 +2,7 @@
 {
     internal enum ObjectLevel
     {
+        Uknown = -1,
         Region = 1,
         District = 3,
         Locality = 4,

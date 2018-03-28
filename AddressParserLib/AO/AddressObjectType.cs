@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 
 namespace AddressParserLib
 {
+    /// <summary>
+    /// Тип адресного обьекта.
+    /// </summary>
     public class AddressObjectType
     {
         /// <summary>
@@ -28,7 +31,7 @@ namespace AddressParserLib
         /// </summary>
         public GenderNoun GenderType { get; private set; }
 
-        public AddressObjectType(string fullName, string abbreviatedName, int level, GenderNoun genderType = GenderNoun.Uknown)
+        public AddressObjectType(string fullName, string abbreviatedName, int level, GenderNoun genderType)
         {
             FullName = fullName;
             AbbreviatedName = abbreviatedName;
@@ -36,6 +39,9 @@ namespace AddressParserLib
             Level = level;
         }
 
+        /// <summary>
+        /// Род названия обьекта.
+        /// </summary>
         public enum GenderNoun
         {
             Uknown,     //Неизвестно
