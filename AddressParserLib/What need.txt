@@ -7,6 +7,9 @@ public List<Coll> Execute(string regexPattern)
 	Regex();
 }
 
+Учесть след вариации
+.....[тип обьекта с ] одно слово.
+
 
 struct Coll:{
 	Match,

@@ -23,7 +23,7 @@ namespace AddressParserLib
             sb.Append(PostalCode);
             foreach (var item in objects)
             {
-                if(sb.ToString()!="")
+                if (sb.ToString() != "")
                     sb.Append(", ");
                 sb.Append(item?.Name);
             }

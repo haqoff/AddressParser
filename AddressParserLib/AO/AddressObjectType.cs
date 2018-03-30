@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace AddressParserLib
+﻿namespace AddressParserLib
 {
     /// <summary>
     /// Тип адресного обьекта.
@@ -31,11 +25,11 @@ namespace AddressParserLib
         /// </summary>
         public GenderNoun GenderType { get; private set; }
 
-        public AddressObjectType(string fullName, string abbreviatedName, int level, GenderNoun genderType)
+        public AddressObjectType(string fullName, string abbreviatedName, int level, GenderNoun genderType = GenderNoun.Uknown)
         {
             FullName = fullName;
             AbbreviatedName = abbreviatedName;
-            GenderType = GenderType;
+            GenderType = genderType;
             Level = level;
         }
 

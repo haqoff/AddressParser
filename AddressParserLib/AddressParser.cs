@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using System.Text.RegularExpressions;
 
 namespace AddressParserLib
 {
@@ -24,15 +23,22 @@ namespace AddressParserLib
         /// <param name="source"></param>
         public List<FullAddress> Parse(string source)
         {
-            var obviousObjects = ParseObvious(ref source).obviousObjects;
-
-
             
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("-----------------------");
+            
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("Исходная: {0}", source);
+            Console.ResetColor();
+
+            var obviousObjects = ParseObvious(ref source).obviousObjects;
 
             foreach (var item in truncator.Split(source))
             {
-                Console.WriteLine("------");
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine();           
                 Console.WriteLine("Вариант:");
+                Console.ResetColor();
 
                 item.AObjects.AddRange(obviousObjects);
                 foreach (var obj in item.AObjects)
@@ -40,8 +46,15 @@ namespace AddressParserLib
                     Console.Write(obj.Name + "-->");
                 }
                 Console.WriteLine();
-                Console.WriteLine("----");
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine();
+                Console.ResetColor();
             }
+
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("-----------------------");
+            Console.ResetColor();
+
             return null;
         }
 
@@ -62,6 +75,8 @@ namespace AddressParserLib
                 preparsedObjects.Add(buildingNum);
             if (roomNum != null)
                 preparsedObjects.Add(roomNum);
+
+            preparsedObjects.AddRange(truncator.TruncByCorrectPos(ref source));
 
             return (preparsedObjects, postalCode);
         }

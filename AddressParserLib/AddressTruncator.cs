@@ -4,16 +4,14 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
+using static AddressParserLib.AddressObjectType;
 
 namespace AddressParserLib
 {
-    /// <summary>
-    /// 
-    /// </summary>
     internal class AddressTruncator
     {
-        private const string litterPattern = @"\s*([а-я](?=[^а-я]|$))*";
-        private const string uniPattern = @"((?<={0}.*?)[0-9]+(\/[0-9]+)*)" + litterPattern;
+        private const string litterPattern = @"([^а-я]*)([а-я](?=[^а-я]|$))*";
+        private const string uniPattern = @"(((д|дом)[^а-я]*?)[0-9]+(\/[0-9]+)*)" + litterPattern;
 
         private const string buildingLitterPattern = @"(?<=[0-9]+[^а-я]*)ли.*?(\.| +)(?=[а-я])";
         private const string simpleHousePattern = @"[0-9]+" + litterPattern;
@@ -23,6 +21,10 @@ namespace AddressParserLib
         private string fullHouseTypesPattern;
         private string fullRoomTypesPattern;
         private string AOTypesPattern;
+        private string roomTypesMultiPattern;
+        private string houseTypesMultiPattern;
+        private string regionPattern;
+        private string regionTypesMultiPattern;
 
         private AOTypeDictionary typeDictionary;
         private RegexGroup regexGroup;
@@ -33,16 +35,20 @@ namespace AddressParserLib
             this.typeDictionary = typeDictionary;
             sb = new StringBuilder();
 
-            fullHouseTypesPattern = String.Format(uniPattern, typeDictionary.GetRegexMultiPattern(ObjectLevel.House));
-            fullRoomTypesPattern = String.Format(uniPattern, typeDictionary.GetRegexMultiPattern(ObjectLevel.Room));
+            houseTypesMultiPattern = typeDictionary.GetRegexMultiPattern((int)ObjectLevel.House);
+            roomTypesMultiPattern = typeDictionary.GetRegexMultiPattern((int)ObjectLevel.Room);
+            regionTypesMultiPattern = typeDictionary.GetRegexMultiPattern((int)ObjectLevel.Region, GenderNoun.Fiminine);
 
-            AOTypesPattern = String.Format(@"(?<=[^а-я]|^){0}.*?((?=[^а-я]|$))", typeDictionary.GetRegexMultiPattern());
+
+            fullHouseTypesPattern = String.Format(uniPattern, houseTypesMultiPattern);
+            fullRoomTypesPattern = String.Format(uniPattern, roomTypesMultiPattern);
+
+            if (regionTypesMultiPattern != "()")
+                regionPattern = String.Format("^.+ая +{0}.*?(?=[^а-я]+?)", regionTypesMultiPattern);
+
+            AOTypesPattern = String.Format(@"(?<=[^а-я]|^){0}((?=[^а-я]|$))", typeDictionary.GetRegexMultiPattern());
 
             regexGroup = new RegexGroup(RegexOptions.Compiled | RegexOptions.IgnoreCase);
-
-            // regionRegex = new Regex(@"(?<=\W|^).+?ая(?=((\W)+о))", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.RightToLeft);
-
-
         }
 
 
@@ -69,42 +75,77 @@ namespace AddressParserLib
         /// <returns></returns>
         internal (AddressObject buildingNum, AddressObject roomNum) TruncBuildingAndRoomNum(ref string source)
         {
+            AddressObject buildingAO = null;
+            AddressObject roomAO = null;
+
             source = regexGroup.Replace(buildingLitterPattern, source, "");
-            string buildingNum = regexGroup.GetMatch(fullHouseTypesPattern, source).Value;
-            if (buildingNum != "")
-                source = source.Replace(buildingNum, "");
+            var buildings = regexGroup.GetInnerMatch(fullHouseTypesPattern, houseTypesMultiPattern, source);
+            if (buildings.Count > 0)
+            {
+                source = source.Replace(buildings[0].outer.Value, "");
+                string buildingName = buildings[0].outer.Value.Replace(buildings[0].inner.Value, "").Replace(" ", "");
 
+                sb.Clear();
+                bool digitFinded = false;
+                for (int i = 0; i < buildingName.Length; i++)
+                {
+                    if (Char.IsDigit(buildingName[i]))
+                        digitFinded = true;
+                    if (digitFinded && Char.IsLetterOrDigit(buildingName[i]))
+                    {
+                        sb.Append(buildingName[i]);
+                    }
+                }
+                string buildingType = buildings[0].inner.Value;
+                buildingAO = new AddressObject(sb.ToString(), typeDictionary.GetAOType(buildingType));
+            }
 
-            var roomMatch = regexGroup.GetMatch(fullRoomTypesPattern, source);
-            string roomNum = roomMatch.Value;
-            if (roomNum != "")
-                source = source.Remove(roomMatch.Index, roomMatch.Length);
+            var rooms = regexGroup.GetInnerMatch(fullRoomTypesPattern, roomTypesMultiPattern, source);
+            if (rooms.Count > 0)
+            {
+                source = source.Replace(rooms[0].outer.Value, "");
+                string roomName = rooms[0].outer.Value.Replace(rooms[0].inner.Value, "");
+                string roomType = rooms[0].inner.Value;
+                roomAO = new AddressObject(roomName, typeDictionary.GetAOType(roomType));
+            }
 
-            if (buildingNum == "")
+            if (buildingAO == null)
             {
                 //пока что просто берём самое последнее число в строке и считаем это домом, но в будущем нужно будет на всякий сделать проверку
                 if (regexGroup.IsMatch(simpleHousePattern, source))
                 {
                     var matches = regexGroup.GetMatches(simpleHousePattern, source);
                     var buildingMatch = matches[matches.Count - 1];
-                    buildingNum = buildingMatch.Value;
+                    buildingAO = new AddressObject(buildingMatch.Value.Replace(" ", ""), new AddressObjectType(null, null, (int)ObjectLevel.House, GenderNoun.Uknown));
                     source = source.Remove(buildingMatch.Index, buildingMatch.Length);
                 }
             }
 
-            AddressObject bNum = null;
-            AddressObject rNum = null;
+            return (buildingAO, roomAO);
+        }
 
-            if (buildingNum != "")
+
+        /// <summary>
+        /// Очищает и возвращает объекты, однозначно распарсенные по позиции.    
+        /// </summary>
+        /// <param name="source"></param>
+        /// <returns></returns>
+        internal List<AddressObject> TruncByCorrectPos(ref string source)
+        {
+            var result = new List<AddressObject>();
+
+            var matches = regexGroup.GetInnerMatch(regionPattern, regionTypesMultiPattern, source);
+
+            if (matches?.Count > 0)
             {
-                bNum = new AddressObject(buildingNum.Replace(" ", ""));
-                if (roomNum != "")
-                {
-                    rNum = new AddressObject(roomNum.Replace(" ", ""));
-                }
+                var region = matches[0];
+                source = source.Replace(region.outer.Value, "");
+                string regionName = region.outer.Value.Remove(region.inner.Index, region.inner.Length);
+
+                result.Add(new AddressObject(regionName, typeDictionary.GetAOType(region.inner.Value)));
             }
 
-            return (bNum, rNum);
+            return result;
         }
 
 
@@ -121,9 +162,17 @@ namespace AddressParserLib
 
             foreach (var subs in source.Split(',', ';'))
             {
-                //Здесь должна проверка на то, что в строке есть хотя бы одна буква
-                if (subs == "" || subs == " ")
+                //Проверка что в строке есть хотя бы 2 буквы
+                int countLettersOrDigits = 0;
+                foreach (var c in subs)
+                {
+                    if (Char.IsLetterOrDigit(c))
+                        countLettersOrDigits++;
+                }
+                if (countLettersOrDigits < 2)
                     continue;
+
+
 
                 var curVariants = new List<Variant>();
 

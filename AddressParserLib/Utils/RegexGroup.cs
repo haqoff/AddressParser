@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace AddressParserLib.Utils
@@ -21,7 +22,7 @@ namespace AddressParserLib.Utils
         /// <param name="pattern"></param>
         /// <param name="input"></param>
         /// <returns></returns>
-        public Match GetMatch(string pattern, string input) => GetRegex(pattern).Match(input);
+        public Match GetMatch(string pattern, string input) => GetRegex(pattern)?.Match(input);
 
         /// <summary>
         /// Возвращает все вхождения по регулярному выражению.
@@ -29,7 +30,7 @@ namespace AddressParserLib.Utils
         /// <param name="pattern"></param>
         /// <param name="input"></param>
         /// <returns></returns>
-        public MatchCollection GetMatches(string pattern, string input) => GetRegex(pattern).Matches(input);
+        public MatchCollection GetMatches(string pattern, string input) => GetRegex(pattern)?.Matches(input);
 
 
         /// <summary>
@@ -42,12 +43,16 @@ namespace AddressParserLib.Utils
         public List<InnerMatch> GetInnerMatch(string outerPattern, string innerPattern, string input)
         {
             var result = new List<InnerMatch>();
-            foreach (Match outterMatch in GetMatches(outerPattern,input))
+            var matches = GetMatches(outerPattern, input);
+            if (matches == null)
+                return null;
+
+            foreach (Match outterMatch in matches)
             {
                 result.Add(new InnerMatch()
                 {
-                    inner = GetMatch(innerPattern,outterMatch.Value).Value,
-                    outer = outterMatch.Value
+                    inner = GetMatch(innerPattern,outterMatch.Value),
+                    outer = outterMatch
                 }
                 );
             }
@@ -61,7 +66,7 @@ namespace AddressParserLib.Utils
         /// <param name="pattern"></param>
         /// <param name="input"></param>
         /// <returns></returns>
-        public bool IsMatch(string pattern, string input) => GetRegex(pattern).IsMatch(input);
+        public bool IsMatch(string pattern, string input) => GetRegex(pattern)?.IsMatch(input) ?? false;
 
         /// <summary>
         /// Заменяет все вхождения по регулярному выражению.
@@ -70,11 +75,13 @@ namespace AddressParserLib.Utils
         /// <param name="input"></param>
         /// <param name="replacement"></param>
         /// <returns></returns>
-        public string Replace(string pattern, string input, string replacement) => GetRegex(pattern).Replace(input, replacement);
+        public string Replace(string pattern, string input, string replacement) => GetRegex(pattern)?.Replace(input, replacement);
 
 
         private Regex GetRegex(string pattern)
         {
+            if (pattern == null)
+                return null;
             if (!cachedRegexes.TryGetValue(pattern, out Regex r))
             {
                 r = new Regex(pattern, options);
@@ -85,7 +92,7 @@ namespace AddressParserLib.Utils
     }
     public struct InnerMatch
     {
-        public string inner;
-        public string outer;
+        public Match inner;
+        public Match outer;
     }
 }

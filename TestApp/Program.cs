@@ -1,10 +1,6 @@
 ﻿using AddressParserLib;
 using AddressParserLib.AO;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace TestApp
 {
@@ -19,21 +15,26 @@ namespace TestApp
             dictionary.Add("пос.", 4);
             dictionary.Add("ул", 7);
             dictionary.Add("респ", 1);
-            dictionary.Add("обл", 1);
+            dictionary.Add("обл", 1,"облатсь", AddressObjectType.GenderNoun.Fiminine);
             dictionary.Add("г", 4);
             dictionary.Add("шос",7);
-            dictionary.Add("д", 7);
+            dictionary.Add("км", 7);
+            dictionary.Add("дом",8);
+            dictionary.Add("пр", 7);
+            dictionary.Add("ш", 7);
 
 
             var parser = new AddressParser(dictionary);
 
-            parser.Parse(@"Самарская обл., Самара, 5 sыбенко ул.,36     ЛИТЕР А ASD");
+        //    parser.Parse(@"432071, Ульяновск, ул. Урицкого, дом №100-Д");
 
-            parser.Parse(@"140073, МО, Томилино,23/7 км Ново-Рязанского шоссе,17 лит. А кв2");
+         //   parser.Parse(@"432063, УЛЬЯНОВСКАЯ ОБЛ, УЛЬЯНОВСК Г, МИНАЕВА УЛ, ДОМ № 15");
 
-            parser.Parse("428023, ЧУВАШСКАЯ РЕСПУБЛИКА- ЧУВАШИЯ, ЧЕБОКСАРЫ Г, КОМПОЗИТОРА МАКСИМОВА УЛ, ДОМ № 13 123213123" );
+          //  parser.Parse("г. Санкт-Петербург, Лиговский пр., д. 174, лит.А");
 
-            parser.Parse("620017, ВЛАДИМИРСКАЯ ОБЛАСТЬ МУРОМ УЛИЦА ФИЛАТОВА 7");
+         //   parser.Parse("105187, г. Москва, Москва, Измайловское ш., 71");
+
+            parser.Parse("Нижегородская обл Кулебаки Фластвоа 2");
 
 
             Console.ReadKey();       

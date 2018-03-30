@@ -1,6 +1,6 @@
 ﻿namespace AddressParserLib.AO
 {
-    internal enum ObjectLevel
+    internal enum ObjectLevel : int
     {
         Uknown = -1,
         Region = 1,
