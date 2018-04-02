@@ -44,7 +44,7 @@ namespace AddressParserLib
             fullRoomTypesPattern = String.Format(uniPattern, roomTypesMultiPattern);
 
             if (regionTypesMultiPattern != "()")
-                regionPattern = String.Format("^.+ая +{0}.*?(?=[^а-я]+?)", regionTypesMultiPattern);
+                regionPattern = String.Format("^[^ ]+ая +{0}.*?(?=[^а-я]+?)", regionTypesMultiPattern);
 
             AOTypesPattern = String.Format(@"(?<=[^а-я]|^){0}((?=[^а-я]|$))", typeDictionary.GetRegexMultiPattern());
 
@@ -112,6 +112,8 @@ namespace AddressParserLib
             if (buildingAO == null)
             {
                 //пока что просто берём самое последнее число в строке и считаем это домом, но в будущем нужно будет на всякий сделать проверку
+                //перед этим ещё сделать просто первое число после ул(7 типа обьекта),по паттерну (ул|ш)[^а-я]*[0-9]+, брать его
+                //если уж и такого нет тоюзаем этот алгоритм.
                 if (regexGroup.IsMatch(simpleHousePattern, source))
                 {
                     var matches = regexGroup.GetMatches(simpleHousePattern, source);
@@ -225,27 +227,22 @@ namespace AddressParserLib
             }
 
             int countVariants = (clearSource.Count - 1) * 2;
-            string binaryMask;
-            string additZero;
+
+            int cur;
 
             for (int i = 0; i < countVariants; i++)
             {
                 sb.Clear();
-                binaryMask = Convert.ToString(i, 2);
-                if (binaryMask.Length < clearSource.Count - 1)
-                {
-                    additZero = new string('0', clearSource.Count - binaryMask.Length - 1);
-                    binaryMask = additZero + binaryMask;
-                }
 
                 var newVariant = new Variant();
 
                 for (int j = 0; j < clearSource.Count; j++)
                 {
+                    cur = i & ((int) Math.Pow(2, clearSource.Count-2-j));
                     if (sb.Length > 0)
                         sb.Append(" ");
                     sb.Append(clearSource[j]);
-                    if (j == clearSource.Count - 1 || binaryMask[j] == '1')
+                    if (j == clearSource.Count - 1 || cur == i)
                     {
                         var address = new AddressObject(sb.ToString());
                         newVariant.AObjects.Add(address);
