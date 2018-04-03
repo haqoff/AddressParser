@@ -22,21 +22,16 @@ namespace TestApp
             dictionary.Add("дом",8);
             dictionary.Add("пр", 7);
             dictionary.Add("ш", 7);
+            dictionary.Add("р-н", 2);
+            dictionary.Add("п.", 4);
 
 
             var parser = new AddressParser(dictionary);
 
-            parser.Parse(@"432071, Ульяновск, ул. Урицкого, дом №100-Д");
+           parser.Parse(@"191119, САНКТ-ПЕТЕРБУРГ Г, САНКТ-ПЕТЕРБУРГ, КОНСТАНТИНА ЗАСЛОНОВА УЛ, ДОМ № 26, КОРПУС А");
+         //   Console.Write("лесная    ".Trim(' ').Trim('.'));
 
-            parser.Parse(@"432063, УЛЬЯНОВСКАЯ ОБЛ, УЛЬЯНОВСК Г, МИНАЕВА УЛ, ДОМ № 15");
-
-            parser.Parse("г. Санкт-Петербург, Лиговский пр., д. 174, лит.А");
-
-            parser.Parse("105187, г. Москва, Москва, Измайловское ш., 71");
-
-            parser.Parse("Нижегоросдкая обл Кулебакский Кулебаки Филатова ул 2");
-
-
+         //   Console.Write("@");
             Console.ReadKey();       
         }
     }

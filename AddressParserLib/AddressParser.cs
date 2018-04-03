@@ -33,15 +33,20 @@ namespace AddressParserLib
 
             var obviousObjects = ParseObvious(ref source).obviousObjects;
 
-            foreach (var item in truncator.Split(source))
+            var buildingAndRoomVariants = truncator.TruncBuildingAndRoomNum(ref source);
+
+            var splitted = truncator.Split(source);
+
+            foreach (var item in Variant.Combine(splitted, buildingAndRoomVariants))
             {
                 Console.ForegroundColor = ConsoleColor.White;
                 Console.WriteLine();           
                 Console.WriteLine("Вариант:");
                 Console.ResetColor();
 
-                item.AObjects.AddRange(obviousObjects);
-                foreach (var obj in item.AObjects)
+                item.AddRange(obviousObjects);
+
+                foreach (var obj in item)
                 {
                     Console.Write(obj.Name + "-->");
                 }
@@ -68,13 +73,6 @@ namespace AddressParserLib
             var preparsedObjects = new List<AddressObject>();
 
             string postalCode = truncator.TruncPostalCode(ref source);
-
-            var (buildingNum, roomNum) = truncator.TruncBuildingAndRoomNum(ref source);
-
-            if (buildingNum != null)
-                preparsedObjects.Add(buildingNum);
-            if (roomNum != null)
-                preparsedObjects.Add(roomNum);
 
             preparsedObjects.AddRange(truncator.TruncByCorrectPos(ref source));
 

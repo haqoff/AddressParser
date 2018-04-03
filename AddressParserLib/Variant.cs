@@ -1,15 +1,28 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections;
+using System.Collections.Generic;
 
 namespace AddressParserLib
 {
-    class Variant
+    class Variant : IEnumerable<AddressObject>
     {
-        public List<AddressObject> AObjects { get; private set; }
+        private List<AddressObject> AObjects;
 
         public Variant()
         {
             AObjects = new List<AddressObject>();
         }
+
+        public void Add(AddressObject ao)
+        {
+            if (ao != null)
+                AObjects.Add(ao);
+        }
+
+        public void AddRange(List<AddressObject> objects)
+        {
+            AObjects.AddRange(objects);
+        }
+
 
         public static List<Variant> Combine(List<Variant> a, List<Variant> b)
         {
@@ -31,6 +44,16 @@ namespace AddressParserLib
                 }
             }
             return combineds;
+        }
+
+        public IEnumerator<AddressObject> GetEnumerator()
+        {
+            return ((IEnumerable<AddressObject>)AObjects).GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return ((IEnumerable<AddressObject>)AObjects).GetEnumerator();
         }
     }
 }
