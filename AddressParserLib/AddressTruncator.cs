@@ -14,11 +14,11 @@ namespace AddressParserLib
         private RegexGroup regexGroup;
         private StringBuilder sb;
 
-        private const string litterPattern = @"([^а-я]*)([а-я](?=[^а-я]|$))*";
+        private const string litterPattern = @"([^а-я]*?)([а-я](?=[^а-я]|$))*";
         private const string typeAndNumber = @"(({0}[^а-я]*?)[0-9]+(\/[0-9]+)*)" + litterPattern;
 
         private const string buildingLitterPattern = @"(?<=[0-9]+[^а-я]*)ли.*?(\.| +)(?=[а-я])";
-        private const string simpleHousePattern = @"[0-9]+" + litterPattern;
+        private const string simpleHousePattern = "[0-9]+" + litterPattern;
         private const string postalPattern = @"[0-9]{6}";
         private const string anyWordPattern = "(?<= |^).*?(?= |$)";
         private const string housingNumberPattern = "[^а-я]кор[а-я]*?[^а-я]*?[0-9]+";

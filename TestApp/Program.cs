@@ -28,7 +28,7 @@ namespace TestApp
 
             var parser = new AddressParser(dictionary);
 
-           parser.Parse(@"191119, САНКТ-ПЕТЕРБУРГ Г, САНКТ-ПЕТЕРБУРГ, КОНСТАНТИНА ЗАСЛОНОВА УЛ, ДОМ № 26, КОРПУС А");
+           parser.Parse(@"191119, САНКТ-ПЕТЕРБУРГ Г, САНКТ-ПЕТЕРБУРГ, КОНСТАНТИНА ЗАСЛОНОВА УЛ, 26, КОРПУС А");
          //   Console.Write("лесная    ".Trim(' ').Trim('.'));
 
          //   Console.Write("@");
