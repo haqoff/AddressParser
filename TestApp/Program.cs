@@ -10,6 +10,7 @@ namespace TestApp
         {
             var dictionary = new AOTypeDictionary();
 
+            dictionary.Add("пр-кт", 7);
             dictionary.Add("кв",9);
             dictionary.Add("д", 8);
             dictionary.Add("пос.", 4);
@@ -23,15 +24,18 @@ namespace TestApp
             dictionary.Add("пр", 7);
             dictionary.Add("ш", 7);
             dictionary.Add("р-н", 2);
-            dictionary.Add("п.", 4);
+            dictionary.Add("п", 4);
+            dictionary.Add("б-р", 4);
+            dictionary.Add("к", 9);
+            dictionary.Add("вал", 91);
+            dictionary.Add("пр-т", 7);
+
 
 
             var parser = new AddressParser(dictionary);
 
-           parser.Parse(@"191119, САНКТ-ПЕТЕРБУРГ Г, САНКТ-ПЕТЕРБУРГ, КОНСТАНТИНА ЗАСЛОНОВА УЛ, 26, КОРПУС А");
-         //   Console.Write("лесная    ".Trim(' ').Trim('.'));
+           parser.Parse(@"г.Москва, Солнцевский пр-т, д.28");
 
-         //   Console.Write("@");
             Console.ReadKey();       
         }
     }

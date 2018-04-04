@@ -18,7 +18,7 @@ namespace AddressParserLib
         private const string typeAndNumber = @"(({0}[^а-я]*?)[0-9]+(\/[0-9]+)*)" + litterPattern;
 
         private const string buildingLitterPattern = @"(?<=[0-9]+[^а-я]*)ли.*?(\.| +)(?=[а-я])";
-        private const string simpleHousePattern = "[0-9]+" + litterPattern;
+        private const string simpleHousePattern = @"[0-9]+(\/[0-9]+)*" + litterPattern;
         private const string postalPattern = @"[0-9]{6}";
         private const string anyWordPattern = "(?<= |^).*?(?= |$)";
         private const string housingNumberPattern = "[^а-я]кор[а-я]*?[^а-я]*?[0-9]+";
@@ -50,6 +50,7 @@ namespace AddressParserLib
 
             regionPattern = String.Format("^[^ ]+ая +{0}.*?(?=[^а-я]+?)", regionTypesMultiPattern);
             allTypesMultiPattern = String.Format(@"(?<=[^а-я]|^){0}((?=[^а-я]|$))", typeDictionary.GetRegexMultiPattern());
+            //allTypesMultiPattern = String.Format(@"(?<=[^а-я]|^)(к).*?((?=[^а-я]|$))", typeDictionary.GetRegexMultiPattern());
             housePredictPattern = String.Format("(?<={0}[^а-я]*)[0-9]+", houseTypesMultiPattern) + litterPattern;
 
 
@@ -165,7 +166,8 @@ namespace AddressParserLib
                 source = source.Remove(housingNumber[0].outer.Index, housingNumber[0].outer.Length);
 
                 var buildingWithHousing = new Variant();
-                buildingWithHousing.Add(new AddressObject(buildingAO.Name + "/" + housingNumber[0].inner.Value,new AddressObjectType(null,null,(int)ObjectLevel.House)));
+                buildingWithHousing.Add(new AddressObject(buildingAO.Name + "/" + housingNumber[0].inner.Value,
+                    new AddressObjectType(null,null,(int)ObjectLevel.House)),3);
                 buildingWithHousing.Add(roomAO);
                 variants.Add(buildingWithHousing);
 
@@ -173,7 +175,7 @@ namespace AddressParserLib
                 {
                     var housingAsRoom = new Variant();
                     housingAsRoom.Add(buildingAO);
-                    housingAsRoom.Add(new AddressObject(housingNumber[0].inner.Value,new AddressObjectType(null,null,(int)ObjectLevel.Room)));
+                    housingAsRoom.Add(new AddressObject(housingNumber[0].inner.Value,new AddressObjectType(null,null,(int)ObjectLevel.Room)),2);
                     variants.Add(housingAsRoom);
                 }
             }
@@ -185,7 +187,9 @@ namespace AddressParserLib
                 source = source.Remove(housingLitter.Index, housingLitter.Length);
 
                 var buildingWithLitter = new Variant();
-                buildingWithLitter.Add(new AddressObject(buildingAO.Name + housingLitter.Value[housingLitter.Value.Length-1], new AddressObjectType(null, null, (int)ObjectLevel.House)));
+                buildingWithLitter.Add(new AddressObject
+                    (buildingAO.Name + housingLitter.Value[housingLitter.Value.Length-1], 
+                                                new AddressObjectType(null, null, (int)ObjectLevel.House)),3);
                 buildingWithLitter.Add(roomAO);
                 variants.Add(buildingWithLitter);
             }
@@ -253,21 +257,36 @@ namespace AddressParserLib
 
                 var curVariants = new List<Variant>();
 
-                MatchCollection AOTypes = regexGroup.GetMatches(allTypesMultiPattern, subs);
+                List<Match> AOTypes = regexGroup.GetListSortedMatches(allTypesMultiPattern, subs,new LengthComparer());
 
                 var clearedString = subs;
+                var deletedTypes = new List<string>();
+
                 foreach (Match _match in AOTypes)
                 {
-                    clearedString = clearedString.Remove(_match.Index, _match.Length);
+                    bool contains = false;
+                    foreach (var str in deletedTypes)
+                    {
+                        if(str.Contains(_match.Value))
+                        {
+                            contains = true;
+                            break;
+                        }
+                    }
+                    if (!contains)
+                    {
+                        clearedString = clearedString.Remove(_match.Index, _match.Length);
+                        deletedTypes.Add(_match.Value);
+                    }
                 }
-                clearedString = clearedString.Trim(' ').Trim('.');
+                clearedString = clearedString.Trim(' ').Trim('.').Replace("  "," ").Replace("  "," ");
 
 
                 if (AOTypes.Count == 1 && regexGroup.GetMatches(anyWordPattern, clearedString).Count == 1)
                 {
                     //возвращаем clearedString так как там точно один обьект
                     Variant newVar = new Variant();
-                    newVar.Add(new AddressObject(clearedString, typeDictionary.GetAOType(AOTypes[0].Value)));
+                    newVar.Add(new AddressObject(clearedString, typeDictionary.GetAOType(AOTypes[0].Value)),1);
 
                     curVariants.Add(newVar);
                 }

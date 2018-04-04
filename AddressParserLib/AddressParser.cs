@@ -50,6 +50,7 @@ namespace AddressParserLib
                 {
                     Console.Write(obj.Name + "-->");
                 }
+                Console.Write("Вероятность правильности: {0}",item.GetProbability());
                 Console.WriteLine();
                 Console.ForegroundColor = ConsoleColor.White;
                 Console.WriteLine();
