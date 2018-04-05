@@ -37,7 +37,9 @@ namespace AddressParserLib
 
             var splitted = truncator.Split(source);
 
-            foreach (var item in Variant.Combine(splitted, buildingAndRoomVariants))
+            var res = Variant.Combine(splitted, buildingAndRoomVariants);
+
+            foreach (var item in res)
             {
                 Console.ForegroundColor = ConsoleColor.White;
                 Console.WriteLine();           
@@ -45,6 +47,8 @@ namespace AddressParserLib
                 Console.ResetColor();
 
                 item.AddRange(obviousObjects);
+
+                item.Sort();
 
                 foreach (var obj in item)
                 {

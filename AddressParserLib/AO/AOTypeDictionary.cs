@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using static AddressParserLib.AddressObjectType;
 
@@ -16,6 +17,7 @@ namespace AddressParserLib.AO
         public AOTypeDictionary()
         {
             objectTypes = new Dictionary<string, AddressObjectType>();
+
             sb = new StringBuilder();
         }
 
@@ -26,22 +28,30 @@ namespace AddressParserLib.AO
         {
             try
             {
-                objectTypes.Add(abbreviatedName.ToLower(), new AddressObjectType(fullName, abbreviatedName, level, gender));
+                objectTypes.Add(abbreviatedName.ToLower(), new AddressObjectType(fullName, abbreviatedName.Replace(".",@"\."), level, gender));
             }
-            catch (Exception)
+            catch (Exception e)
             {
-
+                //Мы специально игнорируем, ибо попытка добавить новый AO с такой же абревиатурой не страшна, это + ещё и в документации написано. 
             }
+        }
+
+        /// <summary>
+        /// Сортирует элементы словаря по убыванию длины строки абревиатуры.
+        /// </summary>
+        public void Sort()
+        {
+            objectTypes = objectTypes.OrderByDescending(pair => pair.Key.Length).ToDictionary(pair => pair.Key, pair => pair.Value);
         }
 
         public AddressObjectType GetAOType(string abbreviatedName) => objectTypes[abbreviatedName.ToLower()];
 
 
         /// <summary>
-        /// 
+        /// Возвращает регулярное выражение всех аббревиатур типов обьекта по уровню
         /// </summary>
         /// <param name="level"></param>
-        /// <returns>Возвращает регулярное выражение всех аббревиатур типов обьекта по уровню.</returns>
+        /// <returns>.</returns>
         internal string GetRegexMultiPattern(int level)
         {
             sb.Clear();
@@ -115,9 +125,11 @@ namespace AddressParserLib.AO
                 if (sb.ToString() != "(")
                     sb.Append("|");
                 sb.Append(obj.Value.AbbreviatedName);
+                Console.WriteLine(obj.Value.AbbreviatedName);
             }
             sb.Append(")");
             return sb.ToString();
         }
+
     }
 }

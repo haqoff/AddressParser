@@ -1,6 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
 namespace AddressParserLib.Utils
@@ -35,27 +33,6 @@ namespace AddressParserLib.Utils
 
 
         /// <summary>
-        /// Возвращает отсортированный список Match
-        /// </summary>
-        /// <param name="pattern"></param>
-        /// <param name="input"></param>
-        /// <param name="comparer"></param>
-        /// <returns></returns>
-        public List<Match> GetListSortedMatches(string pattern, string input, IComparer<Match> comparer)
-        {
-            var res = new List<Match>();
-            MatchCollection col = GetMatches(pattern, input);
-
-            foreach (Match _match in col)
-            {
-                res.Add(_match);
-            }
-            res.Sort(comparer);
-
-            return res;
-        }
-
-        /// <summary>
         /// Возвращает список вхождения по внешнему паттерну и вхождения паттерна внутри внешнего.
         /// </summary>
         /// <param name="outerPattern"></param>
@@ -78,9 +55,30 @@ namespace AddressParserLib.Utils
                 }
                 );
             }
-            if (result.Count > 1)
-                result.Sort(new InnerLengthComparer());
             return result;
+        }
+
+
+        /// <summary>
+        /// Возвращает отсортированный список вхождений.
+        /// </summary>
+        /// <param name="pattern"></param>
+        /// <param name="input"></param>
+        /// <param name="comparer"></param>
+        /// <returns></returns>
+        public List<Match> GetSortedMatches(string pattern, string input, IComparer<Match> comparer)
+        {
+            MatchCollection mc = GetMatches(pattern, input);
+            var res = new List<Match>();
+
+            foreach (Match _match in mc)
+            {
+                res.Add(_match);
+            }
+
+            res.Sort(comparer);
+
+            return res;
         }
 
 
@@ -120,27 +118,4 @@ namespace AddressParserLib.Utils
         public Match outer;
     }
 
-    class InnerLengthComparer : IComparer<InnerMatch>
-    {
-        public int Compare(InnerMatch x, InnerMatch y)
-        {
-            if (x.inner.Length > y.inner.Length)
-                return -1;
-            else if (x.inner.Length < y.inner.Length)
-                return 1;
-            return 0;
-        }
-    }
-
-    public class LengthComparer : IComparer<Match>
-    {
-        public int Compare(Match x, Match y)
-        {
-            if (x.Length > y.Length)
-                return 1;
-            else if (x.Length < y.Length)
-                return -1;
-            return 0;
-        }
-    }
 }

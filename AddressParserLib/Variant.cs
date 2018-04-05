@@ -37,7 +37,7 @@ namespace AddressParserLib
         /// <returns></returns>
         public int GetProbability()
         {
-            int tempProbability = knownProbability +  AObjects.Count;
+            int tempProbability = knownProbability + AObjects.Count;
             int needForFullAddress = 0;
             int nullTypeObjects = 0;
 
@@ -60,11 +60,11 @@ namespace AddressParserLib
 
                 }
 
-               
+
             }
 
-      
-          
+
+
 
             foreach (var obj in AObjects)
             {
@@ -72,7 +72,7 @@ namespace AddressParserLib
                     nullTypeObjects++;
             }
 
-            tempProbability -= Math.Abs(needForFullAddress - nullTypeObjects)*2;
+            tempProbability -= Math.Abs(needForFullAddress - nullTypeObjects) * 2;
             return tempProbability;
         }
 
@@ -94,7 +94,7 @@ namespace AddressParserLib
 
         public static List<Variant> Combine(List<Variant> a, List<Variant> b)
         {
- 
+
             if (a.Count == 0)
                 return b;
             if (b.Count == 0)
@@ -116,6 +116,11 @@ namespace AddressParserLib
             return combineds;
         }
 
+        public void Sort()
+        {
+            AObjects.Sort(new AOComparer());
+        }
+
         public IEnumerator<AddressObject> GetEnumerator()
         {
             return ((IEnumerable<AddressObject>)AObjects).GetEnumerator();
@@ -124,6 +129,33 @@ namespace AddressParserLib
         IEnumerator IEnumerable.GetEnumerator()
         {
             return ((IEnumerable<AddressObject>)AObjects).GetEnumerator();
+        }
+
+        class AOComparer : IComparer<AddressObject>
+        {
+            public int Compare(AddressObject x, AddressObject y)
+            {
+              if(x.Type!=null && y.Type != null)
+                {
+                    if (x.Type.Level != (int)ObjectLevel.House && x.Type.Level != (int)ObjectLevel.Room &&
+                        y.Type.Level != (int)ObjectLevel.House && y.Type.Level != (int)ObjectLevel.Room) return (x.Type.Level > y.Type.Level) ? 1 : -1;
+
+                    if ((x.Type.Level == (int)ObjectLevel.House || x.Type.Level == (int)ObjectLevel.Room) &&
+                          y.Type.Level != (int)ObjectLevel.House && y.Type.Level != (int)ObjectLevel.Room) return 1;
+
+                    if (x.Type.Level != (int)ObjectLevel.House && x.Type.Level != (int)ObjectLevel.Room &&
+                        (y.Type.Level != (int)ObjectLevel.House || y.Type.Level != (int)ObjectLevel.Room)) return -1;
+                }
+                if (x.Type == null && y.Type != null && y.Type.Level != (int)ObjectLevel.House && y.Type.Level != (int)ObjectLevel.Room) return 1;
+
+                if (x.Type != null && x.Type.Level != (int)ObjectLevel.House && x.Type.Level != (int)ObjectLevel.Room && y.Type == null) return -1;
+
+                if (x.Type == null && y.Type != null && (y.Type.Level == (int)ObjectLevel.House || y.Type.Level == (int)ObjectLevel.Room)) return -1;
+
+                if (x.Type != null && (x.Type.Level == (int)ObjectLevel.House || x.Type.Level == (int)ObjectLevel.Room) && y.Type == null) return 1;
+
+                return 0;
+            }
         }
     }
 }

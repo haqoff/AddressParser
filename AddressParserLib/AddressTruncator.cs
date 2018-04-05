@@ -3,6 +3,7 @@ using AddressParserLib.Utils;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Linq;
 using System.Text.RegularExpressions;
 using static AddressParserLib.AddressObjectType;
 
@@ -48,10 +49,10 @@ namespace AddressParserLib
             fullHouseTypesPattern = String.Format(typeAndNumber, houseTypesMultiPattern);
             fullRoomTypesPattern = String.Format(typeAndNumber, roomTypesMultiPattern);
 
-            regionPattern = String.Format("^[^ ]+ая +{0}.*?(?=[^а-я]+?)", regionTypesMultiPattern);
-            allTypesMultiPattern = String.Format(@"(?<=[^а-я]|^){0}((?=[^а-я]|$))", typeDictionary.GetRegexMultiPattern());
+            regionPattern = String.Format("^[^ ]+ая +{0}(?=[^а-я]+?)", regionTypesMultiPattern);
+            allTypesMultiPattern = String.Format(@"(?<=[^а-я]|^){0}(\.+?|(?=[^а-я]|$))", typeDictionary.GetRegexMultiPattern());
             //allTypesMultiPattern = String.Format(@"(?<=[^а-я]|^)(к).*?((?=[^а-я]|$))", typeDictionary.GetRegexMultiPattern());
-            housePredictPattern = String.Format("(?<={0}[^а-я]*)[0-9]+", houseTypesMultiPattern) + litterPattern;
+            housePredictPattern = String.Format("(?<={0}[^а-я]*)[0-9]+", streetTypesMultiPattern) + litterPattern;
 
 
             regexGroup = new RegexGroup(RegexOptions.Compiled | RegexOptions.IgnoreCase);
@@ -143,7 +144,7 @@ namespace AddressParserLib
                 if (housesPredict.Success)
                 {
                     source = source.Remove(housesPredict.Index, housesPredict.Length);
-                    buildingIndex = buildings[0].outer.Index;
+                    buildingIndex = housesPredict.Index;
                     buildingAO = new AddressObject(housesPredict.Value, new AddressObjectType(null, null, (int)ObjectLevel.House));
                 }
             }
@@ -155,6 +156,7 @@ namespace AddressParserLib
                 if (lastNumber.Success)
                 {
                     source = source.Remove(lastNumber.Index, lastNumber.Length);
+                    buildingIndex = lastNumber.Index;
                     buildingAO = new AddressObject(lastNumber.Value, new AddressObjectType(null, null, (int)ObjectLevel.House));
                 }
             }
@@ -223,7 +225,7 @@ namespace AddressParserLib
             {
                 var region = matches[0];
                 source = source.Replace(region.outer.Value, "");
-                string regionName = region.outer.Value.Remove(region.inner.Index, region.inner.Length);
+                string regionName = region.outer.Value.Remove(region.inner.Index, region.inner.Length).Replace(" ","");
 
                 result.Add(new AddressObject(regionName, typeDictionary.GetAOType(region.inner.Value)));
             }
@@ -257,30 +259,13 @@ namespace AddressParserLib
 
                 var curVariants = new List<Variant>();
 
-                List<Match> AOTypes = regexGroup.GetListSortedMatches(allTypesMultiPattern, subs,new LengthComparer());
+                var AOTypes = new List<Match>();
 
                 var clearedString = subs;
-                var deletedTypes = new List<string>();
 
-                foreach (Match _match in AOTypes)
-                {
-                    bool contains = false;
-                    foreach (var str in deletedTypes)
-                    {
-                        if(str.Contains(_match.Value))
-                        {
-                            contains = true;
-                            break;
-                        }
-                    }
-                    if (!contains)
-                    {
-                        clearedString = clearedString.Remove(_match.Index, _match.Length);
-                        deletedTypes.Add(_match.Value);
-                    }
-                }
+                ///TODO:  ужно очстить от всех типов обьектов
+
                 clearedString = clearedString.Trim(' ').Trim('.').Replace("  "," ").Replace("  "," ");
-
 
                 if (AOTypes.Count == 1 && regexGroup.GetMatches(anyWordPattern, clearedString).Count == 1)
                 {
