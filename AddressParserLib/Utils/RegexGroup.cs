@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
-namespace AddressParserLib.Utils
+namespace AddressSplitterLib.Utils
 {
     public class RegexGroup
     {

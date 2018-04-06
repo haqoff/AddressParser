@@ -1,5 +1,5 @@
-﻿using AddressParserLib;
-using AddressParserLib.AO;
+﻿using AddressSplitterLib.AO;
+using AddressSplitterLib;
 using System;
 
 namespace TestApp
@@ -43,7 +43,7 @@ namespace TestApp
 
             var parser = new AddressParser(dictionary);
 
-            parser.Parse(@"452650, БАШКОРТОСТАН РЕСП, БАКАЛИНСКИЙ Р-Н, БАКАЛЫ С, КОММУНИСТИЧЕСКАЯ УЛ, ДОМ № 72");
+            parser.Parse(@"103473, г. Москва, Москва, Саянская ул., 8А");
 
             Console.ReadKey();       
         }

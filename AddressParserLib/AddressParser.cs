@@ -1,10 +1,10 @@
-﻿using AddressParserLib.AO;
-using AddressParserLib.Utils;
+﻿using AddressSplitterLib.AO;
+using AddressSplitterLib.Utils;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace AddressParserLib
+namespace AddressSplitterLib
 {
     public sealed class AddressParser
     {

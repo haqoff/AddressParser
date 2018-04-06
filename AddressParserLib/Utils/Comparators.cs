@@ -1,9 +1,9 @@
-﻿using AddressParserLib.AO;
+﻿using AddressSplitterLib.AO;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
 
-namespace AddressParserLib.Utils
+namespace AddressSplitterLib.Utils
 {
 
     /// <summary>

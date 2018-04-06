@@ -1,4 +1,4 @@
-﻿namespace AddressParserLib.AO
+﻿namespace AddressSplitterLib.AO
 {
     internal enum ObjectLevel : int
     {

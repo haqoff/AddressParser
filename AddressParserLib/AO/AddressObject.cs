@@ -1,4 +1,4 @@
-﻿namespace AddressParserLib
+﻿namespace AddressSplitterLib
 {
     public class AddressObject
     {

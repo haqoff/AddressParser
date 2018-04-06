@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using static AddressParserLib.AddressObjectType;
+using static AddressSplitterLib.AddressObjectType;
 
-namespace AddressParserLib.AO
+namespace AddressSplitterLib.AO
 {
     /// <summary>
     /// Словарь типов адресных обьектов.
