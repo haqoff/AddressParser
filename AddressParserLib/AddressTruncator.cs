@@ -3,7 +3,6 @@ using AddressParserLib.Utils;
 using System;
 using System.Collections.Generic;
 using System.Text;
-using System.Linq;
 using System.Text.RegularExpressions;
 using static AddressParserLib.AddressObjectType;
 
@@ -103,7 +102,7 @@ namespace AddressParserLib
                 {
                     if (Char.IsDigit(buildingName[i]))
                         digitFinded = true;
-                    if (digitFinded && Char.IsLetterOrDigit(buildingName[i]))
+                    if (digitFinded)
                     {
                         sb.Append(buildingName[i]);
                     }
@@ -265,6 +264,13 @@ namespace AddressParserLib
 
                 ///TODO:  ужно очстить от всех типов обьектов
 
+                var aoTypes = regexGroup.GetSortedMatches(allTypesMultiPattern, subs, new MatchIndexComparer());
+
+                foreach (var type in aoTypes)
+                {
+                    clearedString = clearedString.Remove(type.Index, type.Length);
+                }
+
                 clearedString = clearedString.Trim(' ').Trim('.').Replace("  "," ").Replace("  "," ");
 
                 if (AOTypes.Count == 1 && regexGroup.GetMatches(anyWordPattern, clearedString).Count == 1)
@@ -344,5 +350,6 @@ namespace AddressParserLib
             return result;
         }
     }
+
 }
 

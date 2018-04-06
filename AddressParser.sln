@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.26730.10
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AddressParserLib", "AddressParserLib\AddressParserLib.csproj", "{2695A5E3-E152-40A1-934E-92948A12BF2E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AddressSplitterLib", "AddressParserLib\AddressSplitterLib.csproj", "{2695A5E3-E152-40A1-934E-92948A12BF2E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestApp", "TestApp\TestApp.csproj", "{74B35D02-15BB-426B-B58C-B303DC85400D}"
 EndProject

@@ -34,6 +34,7 @@ namespace TestApp
             dictionary.Add("г.г.", 5);
             dictionary.Add("область", 1,"область",AddressObjectType.GenderNoun.Fiminine);
             dictionary.Add("край", 1);
+            dictionary.Add("пом.", 9);
 
             dictionary.Sort();
 
@@ -42,7 +43,7 @@ namespace TestApp
 
             var parser = new AddressParser(dictionary);
 
-            parser.Parse(@"Обнинск г. Маркса пр-кт 45, пом.1");
+            parser.Parse(@"452650, БАШКОРТОСТАН РЕСП, БАКАЛИНСКИЙ Р-Н, БАКАЛЫ С, КОММУНИСТИЧЕСКАЯ УЛ, ДОМ № 72");
 
             Console.ReadKey();       
         }

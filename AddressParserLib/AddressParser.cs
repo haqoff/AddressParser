@@ -1,4 +1,5 @@
 ﻿using AddressParserLib.AO;
+using AddressParserLib.Utils;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -21,7 +22,7 @@ namespace AddressParserLib
         /// Возвращает все возможные варианты адресов из строки.
         /// </summary>
         /// <param name="source"></param>
-        public List<FullAddress> Parse(string source)
+        public List<Variant> Parse(string source)
         {
             
             Console.ForegroundColor = ConsoleColor.Red;
@@ -38,6 +39,8 @@ namespace AddressParserLib
             var splitted = truncator.Split(source);
 
             var res = Variant.Combine(splitted, buildingAndRoomVariants);
+
+            res.Sort(new VariantCorrectnessComparer());
 
             foreach (var item in res)
             {
@@ -65,7 +68,7 @@ namespace AddressParserLib
             Console.WriteLine("-----------------------");
             Console.ResetColor();
 
-            return null;
+            return res;
         }
 
 
