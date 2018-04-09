@@ -1,4 +1,4 @@
-﻿using AddressParserLib.AO;
+﻿using AddressSplitterLib.AO;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,7 +6,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace AddressParserLib.Utils
+namespace AddressSplitterLib.Utils
 {
     internal class ByIndexDesending : IComparer<Match>
     {
@@ -23,20 +23,20 @@ namespace AddressParserLib.Utils
     {
         public int Compare(AddressObject x, AddressObject y)
         {
-            if (x.Type != null && y.Type != null)
-            {
-                if (x.Type.Level != (int)ObjectLevel.House && x.Type.Level != (int)ObjectLevel.Room &&
-                    y.Type.Level != (int)ObjectLevel.House && y.Type.Level != (int)ObjectLevel.Room) return (x.Type.Level > y.Type.Level) ? 1 : -1;
+            //if (x.Type != null && y.Type != null)
+            //{
+            //    if (x.Type.Level != (int)ObjectLevel.House && x.Type.Level != (int)ObjectLevel.Room &&
+            //        y.Type.Level != (int)ObjectLevel.House && y.Type.Level != (int)ObjectLevel.Room) return (x.Type.Level > y.Type.Level) ? 1 : -1;
 
-                if ((x.Type.Level == (int)ObjectLevel.House || x.Type.Level == (int)ObjectLevel.Room) &&
-                      y.Type.Level != (int)ObjectLevel.House && y.Type.Level != (int)ObjectLevel.Room) return 1;
+            //    if ((x.Type.Level == (int)ObjectLevel.House || x.Type.Level == (int)ObjectLevel.Room) &&
+            //          y.Type.Level != (int)ObjectLevel.House && y.Type.Level != (int)ObjectLevel.Room) return 1;
 
-                if (x.Type.Level != (int)ObjectLevel.House && x.Type.Level != (int)ObjectLevel.Room &&
-                    (y.Type.Level != (int)ObjectLevel.House || y.Type.Level != (int)ObjectLevel.Room)) return -1;
-            }
-            if (x.Type == null && y.Type != null && y.Type.Level != (int)ObjectLevel.House && y.Type.Level != (int)ObjectLevel.Room) return 1;
+            //    if (x.Type.Level != (int)ObjectLevel.House && x.Type.Level != (int)ObjectLevel.Room &&
+            //        (y.Type.Level != (int)ObjectLevel.House || y.Type.Level != (int)ObjectLevel.Room)) return -1;
+            //}
+          //    if (x.Type == null && y.Type != null && y.Type.Level != (int)ObjectLevel.House && y.Type.Level != (int)ObjectLevel.Room) return 1;
 
-            if (x.Type != null && x.Type.Level != (int)ObjectLevel.House && x.Type.Level != (int)ObjectLevel.Room && y.Type == null) return -1;
+          //  if (x.Type != null && x.Type.Level != (int)ObjectLevel.House && x.Type.Level != (int)ObjectLevel.Room && y.Type == null) return -1;
 
             if (x.Type == null && y.Type != null && (y.Type.Level == (int)ObjectLevel.House || y.Type.Level == (int)ObjectLevel.Room)) return -1;
 

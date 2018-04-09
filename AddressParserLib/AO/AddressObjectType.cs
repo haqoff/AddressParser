@@ -1,4 +1,4 @@
-﻿namespace AddressParserLib
+﻿namespace AddressSplitterLib
 {
     /// <summary>
     /// Тип адресного обьекта.

@@ -1,10 +1,10 @@
-﻿using AddressParserLib.AO;
-using AddressParserLib.Utils;
+﻿using AddressSplitterLib.AO;
+using AddressSplitterLib.Utils;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 
-namespace AddressParserLib
+namespace AddressSplitterLib
 {
     public class Variant : IEnumerable<AddressObject>
     {

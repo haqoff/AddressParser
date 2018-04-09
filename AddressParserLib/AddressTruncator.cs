@@ -1,13 +1,13 @@
-﻿using AddressParserLib.AO;
-using AddressParserLib.Utils;
+﻿using AddressSplitterLib.AO;
+using AddressSplitterLib.Utils;
 using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Linq;
 using System.Text.RegularExpressions;
-using static AddressParserLib.AddressObjectType;
+using static AddressSplitterLib.AddressObjectType;
 
-namespace AddressParserLib
+namespace AddressSplitterLib
 {
     internal class AddressTruncator
     {

@@ -3,9 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.26730.10
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AddressParserLib", "AddressParserLib\AddressParserLib.csproj", "{2695A5E3-E152-40A1-934E-92948A12BF2E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AddressSplitterLib", "AddressParserLib\AddressSplitterLib.csproj", "{2695A5E3-E152-40A1-934E-92948A12BF2E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestApp", "TestApp\TestApp.csproj", "{74B35D02-15BB-426B-B58C-B303DC85400D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FiasParserLib", "FiasParserLib\FiasParserLib.csproj", "{0666612D-6896-4A9C-A88C-C905F945DA3A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{74B35D02-15BB-426B-B58C-B303DC85400D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{74B35D02-15BB-426B-B58C-B303DC85400D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{74B35D02-15BB-426B-B58C-B303DC85400D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0666612D-6896-4A9C-A88C-C905F945DA3A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0666612D-6896-4A9C-A88C-C905F945DA3A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0666612D-6896-4A9C-A88C-C905F945DA3A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0666612D-6896-4A9C-A88C-C905F945DA3A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

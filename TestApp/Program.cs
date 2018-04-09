@@ -1,48 +1,19 @@
-﻿using AddressParserLib;
-using AddressParserLib.AO;
+﻿using FiasParserLib;
 using System;
 
 namespace TestApp
 {
-    class Program
+    public class Program
     {
         static void Main(string[] args)
         {
-            var dictionary = new AOTypeDictionary();
+            var parser = new FiasParser();
 
-            dictionary.Add("к", 9);
-            dictionary.Add("ш", 7);
-            dictionary.Add("п", 4);
-            dictionary.Add("пр-кт", 7);
-            dictionary.Add("пр-т", 7);
-            dictionary.Add("кв",9);
-            dictionary.Add("д", 8);
-            dictionary.Add("пос", 4);
-            dictionary.Add("ул", 7);
-            dictionary.Add("респ", 1);
-            dictionary.Add("обл", 1,"облатсь", AddressObjectType.GenderNoun.Fiminine);
-            dictionary.Add("г", 4);
-            dictionary.Add("шос",7);
-            dictionary.Add("км", 7);
-            dictionary.Add("дом",8);
-            dictionary.Add("пр", 7);   
-            dictionary.Add("р-н", 2);
-            dictionary.Add("б-р", 4);
-            dictionary.Add("вал", 91);
-            dictionary.Add("с.п.", 4);
-            dictionary.Add("АО", 1);
-            dictionary.Add("г.г.", 5);
-            dictionary.Add("область", 1,"область",AddressObjectType.GenderNoun.Fiminine);
-            dictionary.Add("край", 1);
+            parser.Parse(@"347000, РОСТОВСКАЯ ОБЛ, БЕЛОКАЛИТВИНСКИЙ Р-Н, СОСНЫ П, БУДЕННОГО УЛ, ДОМ № 7, КОРПУС Г");
 
-            dictionary.Sort();
+            parser.Parse(@"АРЗАМАС Нижегородская область ЛЕНИНА 129 А");
 
-
-
-
-            var parser = new AddressParser(dictionary);
-
-            parser.Parse(@"346841, РОСТОВСКАЯ ОБЛ, НЕКЛИНОВСКИЙ Р-Н, КРАСНЫЙ ДЕСАНТ Х, ОКТЯБРЬСКАЯ УЛ, ДОМ № 9");
+            parser.Close();
 
             Console.ReadKey();       
         }
