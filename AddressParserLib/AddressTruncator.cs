@@ -259,11 +259,14 @@ namespace AddressParserLib
 
                 var curVariants = new List<Variant>();
 
-                var AOTypes = new List<Match>();
+                var AOTypes = regexGroup.GetSortedMatches(allTypesMultiPattern, subs, new ByIndexDesending());
 
                 var clearedString = subs;
 
-                ///TODO:  ужно очстить от всех типов обьектов
+                foreach (Match _amatch in AOTypes)
+                {
+                    clearedString = clearedString.Remove(_amatch.Index, _amatch.Length);
+                }
 
                 clearedString = clearedString.Trim(' ').Trim('.').Replace("  "," ").Replace("  "," ");
 

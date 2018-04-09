@@ -42,7 +42,7 @@ namespace TestApp
 
             var parser = new AddressParser(dictionary);
 
-            parser.Parse(@"Обнинск г. Маркса пр-кт 45, пом.1");
+            parser.Parse(@"346841, РОСТОВСКАЯ ОБЛ, НЕКЛИНОВСКИЙ Р-Н, КРАСНЫЙ ДЕСАНТ Х, ОКТЯБРЬСКАЯ УЛ, ДОМ № 9");
 
             Console.ReadKey();       
         }
