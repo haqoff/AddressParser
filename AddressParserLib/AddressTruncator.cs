@@ -30,7 +30,7 @@ namespace AddressSplitterLib
         private string roomTypesMultiPattern;
         private string streetTypesMultiPattern;
         private string houseTypesMultiPattern;
-        
+
         private string fullHouseTypesPattern;
         private string fullRoomTypesPattern;
         private string regionPattern;
@@ -87,7 +87,7 @@ namespace AddressSplitterLib
             AddressObject buildingAO = null;
             AddressObject roomAO = null;
 
-            int buildingIndex=-1;
+            int buildingIndex = -1;
 
             //парсим строение по 8 паттерну
             source = regexGroup.Replace(buildingLitterPattern, source, "");
@@ -162,22 +162,24 @@ namespace AddressSplitterLib
             }
 
             //проверяем корпус  цифру
+            bool roomFinded = false;
             var housingNumber = regexGroup.GetInnerMatch(housingNumberPattern, "[0-9]+", source);
-            if(housingNumber.Count>0)
+            if (housingNumber.Count > 0)
             {
                 source = source.Remove(housingNumber[0].outer.Index, housingNumber[0].outer.Length);
 
                 var buildingWithHousing = new Variant();
                 buildingWithHousing.Add(new AddressObject(buildingAO.Name + "/" + housingNumber[0].inner.Value,
-                    new AddressObjectType(null,null,(int)ObjectLevel.House)),3);
+                    new AddressObjectType(null, null, (int)ObjectLevel.House)), 3);
                 buildingWithHousing.Add(roomAO);
                 variants.Add(buildingWithHousing);
 
-                if(roomAO==null)
+                if (roomAO == null)
                 {
+                    roomFinded = true;
                     var housingAsRoom = new Variant();
                     housingAsRoom.Add(buildingAO);
-                    housingAsRoom.Add(new AddressObject(housingNumber[0].inner.Value,new AddressObjectType(null,null,(int)ObjectLevel.Room)),2);
+                    housingAsRoom.Add(new AddressObject(housingNumber[0].inner.Value, new AddressObjectType(null, null, (int)ObjectLevel.Room)), 2);
                     variants.Add(housingAsRoom);
                 }
             }
@@ -190,18 +192,22 @@ namespace AddressSplitterLib
 
                 var buildingWithLitter = new Variant();
                 buildingWithLitter.Add(new AddressObject
-                    (buildingAO.Name + housingLitter.Value[housingLitter.Value.Length-1], 
-                                                new AddressObjectType(null, null, (int)ObjectLevel.House)),3);
+                    (buildingAO.Name + housingLitter.Value[housingLitter.Value.Length - 1],
+                                                new AddressObjectType(null, null, (int)ObjectLevel.House)), 3);
                 buildingWithLitter.Add(roomAO);
                 variants.Add(buildingWithLitter);
             }
 
-            var defVar = new Variant();
-            defVar.Add(buildingAO);
-            defVar.Add(roomAO);
-            variants.Add(defVar);
 
-            if(buildingIndex!=-1&&buildingIndex<source.Length-1)
+            if (!roomFinded)
+            {
+                var defVar = new Variant();
+                defVar.Add(buildingAO);
+                defVar.Add(roomAO);
+                variants.Add(defVar);
+            }
+
+            if (buildingIndex != -1 && buildingIndex < source.Length - 1)
             {
                 source = source.Remove(buildingIndex);
             }
@@ -225,7 +231,7 @@ namespace AddressSplitterLib
             {
                 var region = matches[0];
                 source = source.Replace(region.outer.Value, "");
-                string regionName = region.outer.Value.Remove(region.inner.Index, region.inner.Length).Replace(" ","");
+                string regionName = region.outer.Value.Remove(region.inner.Index, region.inner.Length).Replace(" ", "");
 
                 result.Add(new AddressObject(regionName, typeDictionary.GetAOType(region.inner.Value)));
             }
@@ -268,13 +274,13 @@ namespace AddressSplitterLib
                     clearedString = clearedString.Remove(_amatch.Index, _amatch.Length);
                 }
 
-                clearedString = clearedString.Trim(' ').Trim('.').Replace("  "," ").Replace("  "," ");
+                clearedString = clearedString.Trim(' ').Trim('.').Replace("  ", " ").Replace("  ", " ");
 
                 if (AOTypes.Count == 1 && regexGroup.GetMatches(anyWordPattern, clearedString).Count == 1)
                 {
                     //возвращаем clearedString так как там точно один обьект
                     Variant newVar = new Variant();
-                    newVar.Add(new AddressObject(clearedString, typeDictionary.GetAOType(AOTypes[0].Value)),1);
+                    newVar.Add(new AddressObject(clearedString, typeDictionary.GetAOType(AOTypes[0].Value)), 1);
 
                     curVariants.Add(newVar);
                 }
@@ -285,6 +291,11 @@ namespace AddressSplitterLib
                 }
 
                 res = Variant.Combine(res, curVariants);
+            }
+
+            foreach (var item in res)
+            {
+                item.ClearDublicate();
             }
             return res;
         }

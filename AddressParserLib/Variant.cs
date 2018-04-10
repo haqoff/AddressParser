@@ -117,9 +117,35 @@ namespace AddressSplitterLib
             return combineds;
         }
 
+        /// <summary>
+        /// Удаляет все копии адресных обьектов, сравнивая по именам.
+        /// </summary>
+        /// <returns>Возвращает число удалённых элементов.</returns>
+        public int ClearDublicate()
+        {
+            int count = 0;
+            for (int i = 0; i < AObjects.Count; i++)
+            {
+                for (int j = i + 1; j < AObjects.Count; j++)
+                {
+                    if (AObjects[i].Name== AObjects[j].Name)
+                    {
+                        AObjects.RemoveAt(j);
+                        count++;
+                    }
+                }
+            }
+            return count;
+        }
+
         public void Sort()
         {
             AObjects.Sort(new AOComparer());
+        }
+
+        public int GetCount()
+        {
+            return AObjects.Count;
         }
 
         public IEnumerator<AddressObject> GetEnumerator()

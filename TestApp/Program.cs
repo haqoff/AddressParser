@@ -9,13 +9,22 @@ namespace TestApp
         {
             var parser = new FiasParser();
 
-            parser.Parse(@"347000, РОСТОВСКАЯ ОБЛ, БЕЛОКАЛИТВИНСКИЙ Р-Н, СОСНЫ П, БУДЕННОГО УЛ, ДОМ № 7, КОРПУС Г");
-
-            parser.Parse(@"АРЗАМАС Нижегородская область ЛЕНИНА 129 А");
+             var id = parser.Parse(@"117133, г. Москва, Москва, Генерала Тюленева ул., 2");
+             Print(id);
+            
+  
 
             parser.Close();
 
-            Console.ReadKey();       
+            Console.ReadKey();
+        }
+
+        public static void Print(string id)
+        {
+            Console.WriteLine();
+            Console.WriteLine("---Правильный вариант в БД---");
+            Console.WriteLine("Тип ID:  :: GUID: {1}",  id);
+            Console.WriteLine("-----------------------------");
         }
     }
 }
