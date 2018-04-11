@@ -11,12 +11,12 @@ namespace AddressSplitterLib.AO
     /// </summary>
     public class AOTypeDictionary
     {
-        private Dictionary<string, AddressObjectType> objectTypes;
+        private Dictionary<TypeKey, AddressObjectType> objectTypes;
         private StringBuilder sb;
 
         public AOTypeDictionary()
         {
-            objectTypes = new Dictionary<string, AddressObjectType>();
+            objectTypes = new Dictionary<TypeKey, AddressObjectType>();
 
             sb = new StringBuilder();
         }
@@ -24,13 +24,19 @@ namespace AddressSplitterLib.AO
         /// <summary>
         /// Добавляет новый тип адресного обьекта, если такого не существует.
         /// </summary>
-        public void Add(string abbreviatedName, int level, string fullName = null, GenderNoun gender = GenderNoun.Uknown)
+        public void Add(AddressObjectType objectType)
         {
             try
             {
-                objectTypes.Add(abbreviatedName.ToLower(), new AddressObjectType(fullName, abbreviatedName.Replace(".",@"\."), level, gender));
+                var key = new TypeKey()
+                {
+                    abbreviatedName = objectType.AbbreviatedName.ToLower(),
+                    level = objectType.Level
+                };
+
+                objectTypes.Add(key, objectType);
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 //Мы специально игнорируем, ибо попытка добавить новый AO с такой же абревиатурой не страшна, это + ещё и в документации написано. 
             }
@@ -41,11 +47,45 @@ namespace AddressSplitterLib.AO
         /// </summary>
         public void Sort()
         {
-            objectTypes = objectTypes.OrderByDescending(pair => pair.Key.Length).ToDictionary(pair => pair.Key, pair => pair.Value);
+            objectTypes = objectTypes.OrderByDescending(pair => pair.Key.abbreviatedName.Length).ToDictionary(pair => pair.Key, pair => pair.Value);
         }
 
-        public AddressObjectType GetAOType(string abbreviatedName) => objectTypes[abbreviatedName.ToLower()];
+        /// <summary>
+        /// Возвращает обьект типа адресного обьекта.
+        /// </summary>
+        /// <param name="key"></param>
+        /// <returns></returns>
+        public AddressObjectType GetAOType(TypeKey key)
+        {
+            key.abbreviatedName = key.abbreviatedName.ToLower();
+            return objectTypes[key];
+        }
 
+        /// <summary>
+        /// Возвращает первое вхождение типа адресного обьекта по аббревиатуре.
+        /// </summary>
+        /// <param name="abbreviatedName"></param>
+        /// <returns></returns>
+        public AddressObjectType GetAOType(string abbreviatedName)
+        {
+            //TODO: сейчас ключ ищется линейно, желательно искать двоичным поиском.
+            foreach (var obj in objectTypes)
+            {
+                if (obj.Key.abbreviatedName == abbreviatedName) return obj.Value;
+            }
+            return null;
+        }
+
+        public List<AddressObjectType> GetAOTypes(string abbreviatedName)
+        {
+            var types = new List<AddressObjectType>();
+
+            foreach (var obj in objectTypes)
+            {
+                if (obj.Key.abbreviatedName == abbreviatedName) types.Add(obj.Value);
+            }
+            return types;
+        }
 
         /// <summary>
         /// Возвращает регулярное выражение всех аббревиатур типов обьекта по уровню
@@ -129,6 +169,12 @@ namespace AddressSplitterLib.AO
             }
             sb.Append(")");
             return sb.ToString();
+        }
+
+        public struct TypeKey
+        {
+            public string abbreviatedName;
+            public int level;
         }
 
     }

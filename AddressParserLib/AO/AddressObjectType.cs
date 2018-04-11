@@ -28,7 +28,7 @@
         public AddressObjectType(string fullName, string abbreviatedName, int level, GenderNoun genderType = GenderNoun.Uknown)
         {
             FullName = fullName;
-            AbbreviatedName = abbreviatedName;
+            AbbreviatedName = abbreviatedName?.Replace(".", @"\.").Replace("/", @"\/");
             GenderType = genderType;
             Level = level;
         }

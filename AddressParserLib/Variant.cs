@@ -128,7 +128,7 @@ namespace AddressSplitterLib
             {
                 for (int j = i + 1; j < AObjects.Count; j++)
                 {
-                    if (AObjects[i].Name== AObjects[j].Name)
+                    if (AObjects[i].Name.ToLower()== AObjects[j].Name.ToLower())
                     {
                         AObjects.RemoveAt(j);
                         count++;
