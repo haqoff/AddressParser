@@ -9,16 +9,10 @@ namespace TestApp
         {
             var parser = new FiasParser();
 
-      
-                ParseResult res = parser.Parse(@"Пензенская обл., г.Заречный, Мира пр-кт66   А");
-                Print(res);
-         
-
-            
- 
+            //Пензенская обл., г.Заречный, Мира пр-кт66   А
+            ParseResult res = parser.Parse(@"Пензенская обл., г.Нижний Ломов, Московская ул.10Б");
+            Print(res);
      
-  
-
             parser.Close();
 
             Console.ReadKey();

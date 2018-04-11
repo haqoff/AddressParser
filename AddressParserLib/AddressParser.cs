@@ -32,7 +32,7 @@ namespace AddressSplitterLib
             Console.WriteLine("Исходная: {0}", source);
             Console.ResetColor();
 
-            var obviousObjects = ParseObvious(ref source).obviousObjects;
+            var obviousObjects = ParseObvious(ref source).objects;
 
             var buildingAndRoomVariants = truncator.TruncBuildingAndRoomNum(ref source);
 
@@ -76,15 +76,20 @@ namespace AddressSplitterLib
         /// Очищает и возвращает только однозначные и очевидные обьекты, которые точно являются правильными, из строки.
         /// </summary>
         /// <param name="source"></param>
-        public (List<AddressObject> obviousObjects, string postalCode) ParseObvious(ref string source)
+        internal ObviousObjects ParseObvious(ref string source)
         {
             var preparsedObjects = new List<AddressObject>();
 
-            string postalCode = truncator.TruncPostalCode(ref source);
+            string _postalCode = truncator.TruncPostalCode(ref source);
 
             preparsedObjects.AddRange(truncator.TruncByCorrectPos(ref source));
 
-            return (preparsedObjects, postalCode);
+            return new ObviousObjects() {postalCode = _postalCode, objects = preparsedObjects };
+        }
+        internal struct ObviousObjects
+        {
+            public string postalCode;
+            public List<AddressObject> objects;
         }
 
     }

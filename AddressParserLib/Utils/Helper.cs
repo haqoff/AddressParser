@@ -8,20 +8,8 @@ namespace AddressParserLib.Utils
 {
     public static class Helper
     {
-        private static StringBuilder sb
-        {
-            get
-            {
-                if (sb == null) sb = new StringBuilder();
-                return sb;
-            }
-            set
-            {
-                sb = value;
-            }
-
-        }
-
+        private static StringBuilder sb = new StringBuilder();
+       
         /// <summary>
         /// Возвращает строку из исходной, начиная с первой найденной цифры, в которой только буквы и цифры.
         /// </summary>
