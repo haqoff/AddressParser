@@ -66,6 +66,7 @@ namespace FiasParserLib
                     }
 
                     var newObjs = IterateAddressObject(versionObj, sVariant.PrevObjects);
+                    if(newObjs.Count==1 && cur == variant.GetCount() - 1) alreadyFinded = true;
                     if (newObjs.Count > 0)
                     {
                         sVariant.FullAddress.Append(versionObj.Name);
