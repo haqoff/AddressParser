@@ -33,13 +33,13 @@ namespace AddressSplitterLib.Utils
 
 
         /// <summary>
-        /// Возвращает список вхождения по внешнему паттерну и вхождения паттерна внутри внешнего.
+        /// Возвращает список всех вхождениЙ по внешнему паттерну и вхождение внутреннего паттерна внутри внешнего.
         /// </summary>
         /// <param name="outerPattern"></param>
         /// <param name="innerPattern"></param>
         /// <param name="input"></param>
         /// <returns></returns>
-        public List<InnerMatch> GetInnerMatch(string outerPattern, string innerPattern, string input)
+        public List<InnerMatch> GetInnerMatches(string outerPattern, string innerPattern, string input)
         {
             var result = new List<InnerMatch>();
             var matches = GetMatches(outerPattern, input);
@@ -56,6 +56,22 @@ namespace AddressSplitterLib.Utils
                 );
             }
             return result;
+        }
+
+        /// <summary>
+        /// Возвращает список первого вхождения по внешнему паттерну и вхождение внутреннего паттерна внутри внешнего.
+        /// </summary>
+        /// <param name="outerPattern"></param>
+        /// <param name="innerPattern"></param>
+        /// <param name="input"></param>
+        /// <returns></returns>
+        public InnerMatch GetInnerMatch(string outerPattern, string innerPattern, string input)
+        {
+            var outerMatch = GetMatch(outerPattern, input);
+            if (!outerMatch.Success) return null;
+
+            var innerMatch = GetMatch(innerPattern, outerMatch.Value);
+            return new InnerMatch() { outer = outerMatch, inner = innerMatch };
         }
 
 
@@ -112,7 +128,7 @@ namespace AddressSplitterLib.Utils
             return r;
         }
     }
-    public struct InnerMatch
+    public class InnerMatch
     {
         public Match inner;
         public Match outer;

@@ -50,7 +50,8 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Utils\Comparators.cs" />
     <Compile Include="Utils\RegexGroup.cs" />
-    <Compile Include="Utils\Helper.cs" />
+    <Compile Include="Utils\StringHelper.cs" />
+    <Compile Include="Utils\TruncHelper.cs" />
     <Compile Include="Variant.cs" />
   </ItemGroup>
   <ItemGroup>

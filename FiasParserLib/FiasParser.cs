@@ -1,5 +1,6 @@
 ﻿using AddressSplitterLib;
 using AddressSplitterLib.AO;
+using AddressSplitterLib.Utils;
 using FiasParserLib.Exceptions;
 using System;
 using System.Collections.Generic;
@@ -13,9 +14,11 @@ namespace FiasParserLib
         private FiasClassesDataContext dataContext;
         private AddressParser parser;
         private AOTypeDictionary dictionary;
+        private StringBuilder sb;
 
         public FiasParser()
         {
+            sb = new StringBuilder();
             dataContext = new FiasClassesDataContext();
             dictionary = GetDictionaryFromSql();
             parser = new AddressParser(dictionary);
@@ -104,7 +107,7 @@ namespace FiasParserLib
             {
                 if (item.RoomGuids.Count > 0 && maxLevelObj == 9) bestVariants.Add(item);
                 if (item.HouseGuids.Count > 0 && maxLevelObj == 8) bestVariants.Add(item);
-                if (item.PrevObjects.Count > 0 && item.PrevObjects[0]!=null && maxLevelObj < 8) bestVariants.Add(item);
+                if (item.PrevObjects.Count > 0 && item.PrevObjects[0] != null && maxLevelObj < 8) bestVariants.Add(item);
             }
 
             if (bestVariants.Count == 1)
@@ -153,61 +156,46 @@ namespace FiasParserLib
         private List<string> GetHousesGUIDVariants(AddressObject house, List<ObjectMargins> objects)
         {
             var houseGuids = new List<string>();
-
-            if (objects != null)
+            foreach (var obj in objects)
             {
-                foreach (var obj in objects)
+                if (obj == null) continue;
+
+                string housing = StringHelper.GetLettersOrNumbersAfterSlash(house.Name);
+
+                if (housing.Length > 0)
                 {
-                    if (obj == null) continue;
-
-                    var litter = new StringBuilder();
-                    bool numeric = false;
-
-                    foreach (char ch in house.Name)
+                    if (Char.IsNumber(housing[0]))
                     {
-                        if (ch == '/')
-                        {
-                            numeric = true;
-                            continue;
-                        }
-                        if (Char.IsLetter(ch) || numeric) litter.Append(ch);
-                    }
-
-                    if (litter.Length > 0)
-                    {
-                        if (numeric)
-                        {
-                            var qWithLitter = (from h in dataContext.House
-                                               where h.HOUSENUM == house.Name && h.AOGUID == obj.AOGUID && h.BUILDNUM == litter.ToString()
-                                               select h.HOUSEGUID).ToList().Distinct();
-                            houseGuids.AddRange(qWithLitter);
-                        }
-                        else
-                        {
-                            var qWithLitter = (from h in dataContext.House
-                                               where h.HOUSENUM == house.Name && h.AOGUID == obj.AOGUID && h.STRUCNUM == litter.ToString()
-                                               select h.HOUSEGUID).ToList().Distinct();
-                            houseGuids.AddRange(qWithLitter);
-                        }
-                    }
-                    if(houseGuids.Count==0)
-                    {
-                        var qWithLitter = (from h in dataContext.House
-                                           where h.HOUSENUM == house.Name && h.AOGUID == obj.AOGUID && h.STRUCNUM == null && h.BUILDNUM == null
+                        var qWithNumericHousing = (from h in dataContext.House
+                                           where h.HOUSENUM == house.Name && h.AOGUID == obj.AOGUID && h.BUILDNUM == sb.ToString()
                                            select h.HOUSEGUID).ToList().Distinct();
-                        houseGuids.AddRange(qWithLitter);
+                        houseGuids.AddRange(qWithNumericHousing);
                     }
-                    
-
-                    if (houseGuids.Count == 0)
+                    else
                     {
-                        var q = (from h in dataContext.House
-                                 where h.HOUSENUM == house.Name && h.AOGUID == obj.AOGUID
-                                 select h.HOUSEGUID).ToList().Distinct();
-                        houseGuids.AddRange(q);
+                        var qWithLetterHousing = (from h in dataContext.House
+                                           where h.HOUSENUM == house.Name && h.AOGUID == obj.AOGUID && h.STRUCNUM == sb.ToString()
+                                           select h.HOUSEGUID).ToList().Distinct();
+                        houseGuids.AddRange(qWithLetterHousing);
                     }
                 }
+                if (houseGuids.Count == 0)
+                {
+                    var qWithLitter = (from h in dataContext.House
+                                       where h.HOUSENUM == house.Name && h.AOGUID == obj.AOGUID && h.STRUCNUM == null && h.BUILDNUM == null
+                                       select h.HOUSEGUID).ToList().Distinct();
+                    houseGuids.AddRange(qWithLitter);
+                }
+
+                if (houseGuids.Count == 0)
+                {
+                    var q = (from h in dataContext.House
+                             where h.HOUSENUM == house.Name && h.AOGUID == obj.AOGUID
+                             select h.HOUSEGUID).ToList().Distinct();
+                    houseGuids.AddRange(q);
+                }
             }
+
 
             return houseGuids;
         }
@@ -232,6 +220,7 @@ namespace FiasParserLib
         {
 
             var finded = new List<ObjectMargins>();
+            bool notNullFinded = false;
 
             foreach (var prevVar in prevVariants)
             {
@@ -256,7 +245,11 @@ namespace FiasParserLib
                             i--;
                         }
                     }
-                    if (query.Count > 0) finded.AddRange(query);
+                    if (query.Count > 0)
+                    {
+                        finded.AddRange(query);
+                        notNullFinded = true;
+                    }
                     else if (!retrying && prevVar?.AOLEVEL < 4)
                     {
                         var allQ = (from obj in dataContext.Object
@@ -265,12 +258,16 @@ namespace FiasParserLib
                         if (allQ.Count > 0 && allQ.Count < 200)
                         {
                             finded.AddRange(IterateAddressObject(variantObj, allQ, true));
-                            finded.AddRange(prevVariants);
                         }
-                        finded.Add(null);
+                        if (finded.Count == 1 && finded[0] == null)
+                        {
+                            finded.AddRange(prevVariants);
+                            finded.Add(null);
+                        }
+                        else notNullFinded = true;
                     }
                 }
-                else
+                else if(!notNullFinded)
                 {
                     var firstQuery = (from obj in dataContext.Object
                                       where obj.FORMALNAME == variantObj.Name && obj.ACTSTATUS == 1
@@ -278,7 +275,7 @@ namespace FiasParserLib
 
                     int min = Int32.MaxValue;
 
-                    if(variantObj.Type !=null)
+                    if (variantObj.Type != null)
                     {
                         List<AddressSplitterLib.AddressObjectType> types = dictionary.GetAOTypes(variantObj.Type.AbbreviatedName);
 
@@ -291,7 +288,7 @@ namespace FiasParserLib
                                 if (firstQuery[i].AOLEVEL == type.Level) abbrFinded = true;
                             }
 
-                            if(!abbrFinded)
+                            if (!abbrFinded)
                             {
                                 firstQuery.RemoveAt(i);
                                 i--;
@@ -312,7 +309,8 @@ namespace FiasParserLib
                             i--;
                         }
                     }
-                    finded.AddRange(firstQuery);
+                    if (firstQuery.Count > 0) finded.AddRange(firstQuery);
+                    else finded.Add(null);
 
 
                 }

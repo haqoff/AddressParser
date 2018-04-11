@@ -22,7 +22,8 @@ namespace TestApp
         {
             Console.WriteLine();
             Console.WriteLine("---Правильный вариант в БД---");
-            Console.WriteLine("Тип ID: {0} :: GUID: {1}",  res.type, res.id);
+            Console.WriteLine("Тип " +
+                "ID: {0} :: GUID: {1}",  res.type, res.id);
             Console.WriteLine("Фулл адрес: {0}", res.address);
             Console.WriteLine("-----------------------------");
         }

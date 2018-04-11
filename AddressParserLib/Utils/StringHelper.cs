@@ -1,12 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
-namespace AddressParserLib.Utils
+namespace AddressSplitterLib.Utils
 {
-    public static class Helper
+    public static class StringHelper
     {
         private static StringBuilder sb = new StringBuilder();
        
@@ -24,7 +21,7 @@ namespace AddressParserLib.Utils
             {
                 if (Char.IsDigit(source[i]))
                     digitFinded = true;
-                if (digitFinded && Char.IsLetterOrDigit(source[i]))
+                if (digitFinded && (Char.IsLetterOrDigit(source[i]) || source[i]=='/'))
                 {
                     sb.Append(source[i]);
                 }
@@ -33,5 +30,21 @@ namespace AddressParserLib.Utils
             return sb.ToString();
         }
 
+        public static string GetLettersOrNumbersAfterSlash(string source)
+        {
+            sb.Clear();
+            bool numeric = false;
+
+            foreach (char ch in source)
+            {
+                if (ch == '/')
+                {
+                    numeric = true;
+                    continue;
+                }
+                if (Char.IsLetter(ch) || numeric) sb.Append(ch);
+            }
+            return sb.ToString();
+        }
     }
 }
