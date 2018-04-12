@@ -44,7 +44,6 @@
     <Compile Include="AddressParser.cs" />
     <Compile Include="AddressTruncator.cs" />
     <Compile Include="AO\AOTypeDictionary.cs" />
-    <Compile Include="AO\FullAddress.cs" />
     <Compile Include="AO\AddressObjectType.cs" />
     <Compile Include="AO\ObjectLevel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

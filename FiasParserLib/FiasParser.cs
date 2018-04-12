@@ -15,12 +15,24 @@ namespace FiasParserLib
         private AddressParser parser;
         private AOTypeDictionary dictionary;
         private StringBuilder sb;
+        private List<string> bannedAbbriviatedNames;
+
 
         public FiasParser()
         {
+            bannedAbbriviatedNames = new List<string>();
+            bannedAbbriviatedNames.Add("к.");
             sb = new StringBuilder();
             dataContext = new FiasClassesDataContext();
             dictionary = GetDictionaryFromSql();
+           
+
+            dictionary.Add(new AddressSplitterLib.AddressObjectType("область", "область", 1, AddressSplitterLib.AddressObjectType.GenderNoun.Fiminine));
+            dictionary.Add(new AddressSplitterLib.AddressObjectType("область", "обл", 1, AddressSplitterLib.AddressObjectType.GenderNoun.Fiminine));
+            dictionary.Add(new AddressSplitterLib.AddressObjectType("проспект", "пр-т", 7));
+            dictionary.Add(new AddressSplitterLib.AddressObjectType("проспект", "пр.", 7));
+            dictionary.Add(new AddressSplitterLib.AddressObjectType("квартира", "к", 9));
+            dictionary.Sort();
             parser = new AddressParser(dictionary);
         }
 
@@ -42,13 +54,13 @@ namespace FiasParserLib
                     if (versionObj.Type?.Level == 9)
                     {
                         sVariant.RoomGuids = GetRoomsGUIDVariants(versionObj, sVariant.HouseGuids);
-                        if (sVariant.HouseGuids.Count > 0)
+                        if (sVariant.RoomGuids.Count > 0)
                         {
                             sVariant.FullAddress.Append("помещение ");
                             sVariant.FullAddress.Append(versionObj.Name);
                             sVariant.FullAddress.Append("-->");
                         }
-                        if (sVariant.RoomGuids.Count == 1 && cur == variant.GetCount() - 1) alreadyFinded = true;
+                        if (sVariant.HouseGuids.Count == 1 || sVariant.RoomGuids.Count == 1) alreadyFinded = true;
                         continue;
                     }
 
@@ -61,26 +73,36 @@ namespace FiasParserLib
                             sVariant.FullAddress.Append(versionObj.Name);
                             sVariant.FullAddress.Append("-->");
                         }
-                        if (sVariant.HouseGuids.Count == 1 && cur == variant.GetCount() - 1) alreadyFinded = true;
+                        if (sVariant.HouseGuids.Count == 1 && cur == variant.GetCount() - 1&& sVariant.CountFinded>1) alreadyFinded = true;
                         continue;
                     }
 
                     var newObjs = IterateAddressObject(versionObj, sVariant.PrevObjects);
-                    if(newObjs.Count==1 && cur == variant.GetCount() - 1) alreadyFinded = true;
-                    if (newObjs.Count > 0)
+                    if (newObjs.Count == 1 && cur == variant.GetCount() - 1) alreadyFinded = true;
+                    if (newObjs.Count > 0 && newObjs[newObjs.Count - 1] != null)
                     {
                         sVariant.FullAddress.Append(versionObj.Name);
                         sVariant.FullAddress.Append("-->");
+                        sVariant.PrevObjects = newObjs;
+                        sVariant.CountFinded++;
                     }
-                    sVariant.PrevObjects = newObjs;
+
                 }
                 variants.Add(sVariant);
                 if (alreadyFinded) break;
             }
 
+            int maxCountFinded = int.MinValue;
+
+            foreach (var item in variants)
+            {
+                if (item.CountFinded > maxCountFinded) maxCountFinded = item.CountFinded;
+            }
+
             int maxLevelObj = Int32.MinValue;
             foreach (var item in variants)
             {
+                if (maxCountFinded != item.CountFinded) continue;
                 if (item.RoomGuids.Count > 0 && 9 > maxLevelObj)
                 {
                     maxLevelObj = 9;
@@ -106,6 +128,7 @@ namespace FiasParserLib
 
             foreach (var item in variants)
             {
+                if (maxCountFinded != item.CountFinded) continue;
                 if (item.RoomGuids.Count > 0 && maxLevelObj == 9) bestVariants.Add(item);
                 if (item.HouseGuids.Count > 0 && maxLevelObj == 8) bestVariants.Add(item);
                 if (item.PrevObjects.Count > 0 && item.PrevObjects[0] != null && maxLevelObj < 8) bestVariants.Add(item);
@@ -115,20 +138,23 @@ namespace FiasParserLib
             {
                 if (maxLevelObj == 9)
                 {
-                    if (bestVariants[0].RoomGuids.Count > 1) throw new ManyObjectsFindedException(bestVariants[0],
-                           "Найдено много помещений в БД с одинаковым номером, требуется уточнить.");
-
-                    var prRoom = new ParseResult()
+                    if (bestVariants[0].RoomGuids.Count > 0) throw new ManyObjectsFindedException(bestVariants[0],
+                               "Найдено много помещений в БД с одинаковым номером, требуется уточнить.");
+                    if (bestVariants[0].RoomGuids.Count == 1)
                     {
-                        id = bestVariants[0].RoomGuids[0],
-                        type = IdType.Room,
-                        address = bestVariants[0].FullAddress.ToString()
-                    };
-                    return prRoom;
+                        var prRoom = new ParseResult()
+                        {
+                            id = bestVariants[0].RoomGuids[0],
+                            type = IdType.Room,
+                            address = bestVariants[0].FullAddress.ToString()
+                        };
+                        return prRoom;
+                    }
                 }
-                if (maxLevelObj == 8)
+                if (maxLevelObj == 8 || (maxLevelObj == 9 && bestVariants[0].RoomGuids.Count == 0))
                 {
-                    if (bestVariants[0].HouseGuids.Count > 1) throw new ManyObjectsFindedException(bestVariants[0],
+                    if (bestVariants[0].HouseGuids.Count > 1 && bestVariants[0].PrevObjects.Count>1)
+                        throw new ManyObjectsFindedException(bestVariants[0],
                                               "Найдено много строений в БД с одинаковым номером на одной улице, требуется уточнить.");
 
                     var prHouse = new ParseResult()
@@ -161,25 +187,19 @@ namespace FiasParserLib
             {
                 if (obj == null) continue;
 
-                string housing = StringHelper.GetLettersOrNumbersAfterSlash(house.Name);
+                string housing = StringHelper.GetLettersOrNumbersAfterSlash(house.Name, out int firstIndexHousing, out int lengthHousing);
+                string nameWithoutHousing = house.Name;
+                if (!string.IsNullOrEmpty(housing))
+                    nameWithoutHousing = house.Name.Remove(firstIndexHousing, lengthHousing).Replace("/", "");
 
-                if (housing.Length > 0)
+                if(house.Type?.AbbreviatedName=="дом с корпусом"&& housing.Length>0)
                 {
-                    if (Char.IsNumber(housing[0]))
-                    {
-                        var qWithNumericHousing = (from h in dataContext.House
-                                           where h.HOUSENUM == house.Name && h.AOGUID == obj.AOGUID && h.BUILDNUM == sb.ToString()
-                                           select h.HOUSEGUID).ToList().Distinct();
-                        houseGuids.AddRange(qWithNumericHousing);
-                    }
-                    else
-                    {
-                        var qWithLetterHousing = (from h in dataContext.House
-                                           where h.HOUSENUM == house.Name && h.AOGUID == obj.AOGUID && h.STRUCNUM == sb.ToString()
-                                           select h.HOUSEGUID).ToList().Distinct();
-                        houseGuids.AddRange(qWithLetterHousing);
-                    }
+                    var qWithLitter = (from h in dataContext.House
+                                       where h.HOUSENUM == nameWithoutHousing && h.AOGUID == obj.AOGUID && h.BUILDNUM == housing
+                                       select h.HOUSEGUID).ToList().Distinct();
+                    houseGuids.AddRange(qWithLitter);
                 }
+
                 if (houseGuids.Count == 0)
                 {
                     var qWithLitter = (from h in dataContext.House
@@ -188,6 +208,15 @@ namespace FiasParserLib
                     houseGuids.AddRange(qWithLitter);
                 }
 
+                if (houseGuids.Count == 0 && housing.Length > 0)
+                {
+
+                    var qWithNumericHousing = (from h in dataContext.House
+                                               where h.HOUSENUM == nameWithoutHousing && h.AOGUID == obj.AOGUID && (h.BUILDNUM == housing || h.STRUCNUM == housing)
+                                               select h.HOUSEGUID).ToList().Distinct();
+                    houseGuids.AddRange(qWithNumericHousing);
+
+                }
                 if (houseGuids.Count == 0)
                 {
                     var q = (from h in dataContext.House
@@ -195,6 +224,7 @@ namespace FiasParserLib
                              select h.HOUSEGUID).ToList().Distinct();
                     houseGuids.AddRange(q);
                 }
+
             }
 
 
@@ -228,8 +258,8 @@ namespace FiasParserLib
                 if (prevVar != null)
                 {
                     var query = (from obj in dataContext.Object
-                                 where obj.FORMALNAME == variantObj.Name && obj.PARENTGUID == prevVar.AOGUID && obj.ACTSTATUS == 1
-                                 select new ObjectMargins { AOGUID = obj.AOGUID, AOLEVEL = obj.AOLEVEL }).ToList();
+                                 where obj.FORMALNAME == variantObj.Name && obj.PARENTGUID == prevVar.AOGUID
+                                 select new ObjectMargins { AOGUID = obj.AOGUID, AOLEVEL = obj.AOLEVEL }).Distinct().ToList();
 
                     int min = Int32.MaxValue;
 
@@ -254,13 +284,13 @@ namespace FiasParserLib
                     else if (!retrying && prevVar?.AOLEVEL < 4)
                     {
                         var allQ = (from obj in dataContext.Object
-                                    where obj.PARENTGUID == prevVar.AOGUID && obj.ACTSTATUS == 1
-                                    select new ObjectMargins { AOGUID = obj.AOGUID, AOLEVEL = obj.AOLEVEL }).ToList();
+                                    where obj.PARENTGUID == prevVar.AOGUID
+                                    select new ObjectMargins { AOGUID = obj.AOGUID, AOLEVEL = obj.AOLEVEL }).Distinct().ToList();
                         if (allQ.Count > 0 && allQ.Count < 200)
                         {
                             finded.AddRange(IterateAddressObject(variantObj, allQ, true));
                         }
-                        if (finded.Count == 1 && finded[0] == null)
+                        if (finded.Count == 0)
                         {
                             finded.AddRange(prevVariants);
                             finded.Add(null);
@@ -268,15 +298,15 @@ namespace FiasParserLib
                         else notNullFinded = true;
                     }
                 }
-                else if(!notNullFinded)
+                else if (!notNullFinded)
                 {
                     var firstQuery = (from obj in dataContext.Object
-                                      where obj.FORMALNAME == variantObj.Name && obj.ACTSTATUS == 1
-                                      select new ObjectMargins { AOGUID = obj.AOGUID, AOLEVEL = obj.AOLEVEL }).ToList();
+                                      where obj.FORMALNAME == variantObj.Name
+                                      select new ObjectMargins { AOGUID = obj.AOGUID, AOLEVEL = obj.AOLEVEL }).Distinct().ToList();
 
                     int min = Int32.MaxValue;
 
-                    if (variantObj.Type != null)
+                    if (variantObj.Type?.AbbreviatedName != null)
                     {
                         List<AddressSplitterLib.AddressObjectType> types = dictionary.GetAOTypes(variantObj.Type.AbbreviatedName);
 
@@ -326,12 +356,11 @@ namespace FiasParserLib
 
             foreach (var type in dataContext.AddressObjectType)
             {
-                if (!string.IsNullOrEmpty(type.SCNAME))
+                if (!string.IsNullOrEmpty(type.SCNAME) && !bannedAbbriviatedNames.Contains(type.SCNAME))
                     dictionary.Add(new AddressSplitterLib.AddressObjectType(type.SOCRNAME, type.SCNAME, type.LEVEL));
-                if (!string.IsNullOrEmpty(type.SOCRNAME))
+                if (!string.IsNullOrEmpty(type.SOCRNAME) && !bannedAbbriviatedNames.Contains(type.SOCRNAME))
                     dictionary.Add(new AddressSplitterLib.AddressObjectType(type.SOCRNAME, type.SOCRNAME, type.LEVEL));
             }
-            dictionary.Sort();
             return dictionary;
         }
 

@@ -13,7 +13,7 @@
         /// <summary>
         /// Сокращённое имя типа обьекта.
         /// </summary>
-        public string AbbreviatedName { get; private set; }
+        public string AbbreviatedName { get; internal set; }
 
         /// <summary>
         /// Уровень обьекта
@@ -28,7 +28,7 @@
         public AddressObjectType(string fullName, string abbreviatedName, int level, GenderNoun genderType = GenderNoun.Uknown)
         {
             FullName = fullName;
-            AbbreviatedName = abbreviatedName?.Replace(".", @"\.").Replace("/", @"\/");
+            AbbreviatedName = abbreviatedName;
             GenderType = genderType;
             Level = level;
         }

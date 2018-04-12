@@ -24,7 +24,7 @@ namespace AddressSplitterLib
         private const string postalPattern = @"[0-9]{6}";
         private const string anyWordPattern = "(?<= |^).*?(?= |$)";
         private const string housingNumberPattern = "[^а-я]кор[а-я]*?[^а-я]*?[0-9]+";
-        private const string housingLitterPattern = "[^а-я]кор.*?[^а-я]+[а-я]+";
+        private const string housingLitterPattern = "[^а-я](корпус|корпу|корп|кор)[^а-я]+[а-я]+";
 
         private string allTypesMultiPattern;
         private string regionTypesMultiPattern;
@@ -52,7 +52,7 @@ namespace AddressSplitterLib
 
             regionPattern = String.Format("^[^ ]+ая +{0}(?=[^а-я]+?)", regionTypesMultiPattern);
             allTypesMultiPattern = String.Format(@"(?<=[^а-я]|^){0}(\.+?|(?=[^а-я]|$))", typeDictionary.GetRegexMultiPattern());
-            housePredictPattern = String.Format("(?<={0}[^а-я]*)[0-9]+([^а-я]*)([а-я](?=[^а-я]|$))*", streetTypesMultiPattern) + litterPattern;
+            housePredictPattern = String.Format("(?<=([^а-я]|^){0}[^а-я]*)[0-9]+([^а-я]*)([а-я](?=[^а-я]|$))*", streetTypesMultiPattern) + litterPattern;
 
 
             regexGroup = new RegexGroup(RegexOptions.Compiled | RegexOptions.IgnoreCase);
@@ -91,8 +91,11 @@ namespace AddressSplitterLib
 
             //парсим строение по 8 паттерну(по словарю)
             source = regexGroup.Replace(buildingLitterPattern, source, "");
+            source = regexGroup.Replace("(?<=[0-9]+)[^а-я0-9]*стр[^а-я0-9]*(?=[0-9]+)", source, "/");
+            var numberSc = regexGroup.GetMatch("[0-9]+ [а-я]+(а|я)([^а-я]|$)", source);
+
             var building = regexGroup.GetInnerMatch(fullHouseTypesPattern, houseTypesMultiPattern, source);
-            if (building!=null)
+            if (building != null)
             {
                 source = source.Remove(building.outer.Index, building.outer.Length);
                 string buildingName = building.outer.Value.Remove(building.inner.Index, building.inner.Length);
@@ -101,17 +104,18 @@ namespace AddressSplitterLib
                 string buildingTypeName = building.inner.Value;
                 var houseType = typeDictionary.GetAOType(new TypeKey()
                 {
-                    abbreviatedName = buildingTypeName, level = (int)ObjectLevel.House
+                    abbreviatedName = buildingTypeName,
+                    level = (int)ObjectLevel.House
                 });
-               
-                string housing = StringHelper.GetLettersOrNumbersAfterSlash(buildingName);
 
-                if(housing!="")
+                string housing = StringHelper.GetLettersOrNumbersAfterSlash(buildingName, out int firstIndexHousing, out int lengthHousing);
+
+                if (housing != "")
                 {
                     //у нас есть корпус!!!
                     var newVar = new Variant();
-                    string name = StringHelper.GetOnlyDigitsAndLetters(buildingName.Replace(housing, "").Replace("/",""));
-                    newVar.Add(new AddressObject(name, houseType));
+                    string name = StringHelper.GetOnlyDigitsAndLetters(buildingName.Remove(firstIndexHousing, lengthHousing).Replace("/", ""));
+                    newVar.Add(new AddressObject(name, houseType), -1);
                     variants.Add(newVar);
                 }
                 buildingAO = new AddressObject(StringHelper.GetOnlyDigitsAndLetters(buildingName), houseType);
@@ -120,35 +124,36 @@ namespace AddressSplitterLib
 
             //парсим помещение по 9 паттерну(по словарю)
             var room = regexGroup.GetInnerMatch(fullRoomTypesPattern, roomTypesMultiPattern, source);
-            if (room!=null)
+            if (room != null)
             {
                 source = source.Remove(room.outer.Index, room.outer.Length);
                 string roomName = room.outer.Value.Remove(room.inner.Index, room.inner.Length);
 
                 string roomType = room.inner.Value;
                 roomAO = new AddressObject(StringHelper.GetOnlyDigitsAndLetters(roomName), typeDictionary.GetAOType(new TypeKey()
-                {abbreviatedName = roomType, level = (int) ObjectLevel.Room}));
+                { abbreviatedName = roomType, level = (int)ObjectLevel.Room }));
             }
 
             //ищем дом по патерну 7:(ул|ш)[^а-я]*[0-9]+ 
+            
             if (buildingAO == null)
             {
                 var housePredict = regexGroup.GetMatch(housePredictPattern, source);
-                if (housePredict.Success)
+                bool notInNumberSc = !(housePredict.Index >= numberSc.Index && housePredict.Index + housePredict.Length <= numberSc.Index + numberSc.Length);
+                if (housePredict.Success && notInNumberSc)
                 {
                     source = source.Remove(housePredict.Index, housePredict.Length);
                     buildingIndex = housePredict.Index;
 
                     var houseType = new AddressObjectType(null, null, (int)ObjectLevel.House);
 
-                    string housing = StringHelper.GetLettersOrNumbersAfterSlash(housePredict.Value);
-
+                    string housing = StringHelper.GetLettersOrNumbersAfterSlash(housePredict.Value, out int firstIndexHousing, out int lengthHousing);
                     if (housing != "")
                     {
                         //у нас есть корпус!!!
                         var newVar = new Variant();
-                        string name = StringHelper.GetOnlyDigitsAndLetters(housePredict.Value.Replace(housing, "").Replace("/", ""));
-                        newVar.Add(new AddressObject(name, houseType));
+                        string name = StringHelper.GetOnlyDigitsAndLetters(housePredict.Value.Remove(firstIndexHousing, lengthHousing).Replace("/", ""));
+                        newVar.Add(new AddressObject(name, houseType), -1);
                         variants.Add(newVar);
                     }
 
@@ -159,25 +164,32 @@ namespace AddressSplitterLib
             //если по паттернам не получилось, то просто берём самое последнее число;
             if (buildingAO == null)
             {
-                var lastNumber = regexGroup.GetMatch(simpleHousePattern, source);
-                if (lastNumber.Success)
+                var anyNumber = regexGroup.GetMatches(simpleHousePattern, source);
+
+                if (anyNumber.Count > 0)
                 {
-                    source = source.Remove(lastNumber.Index, lastNumber.Length);
-                    buildingIndex = lastNumber.Index;
-                    buildingAO = new AddressObject(lastNumber.Value, new AddressObjectType(null, null, (int)ObjectLevel.House));
+                    var lastNumber = anyNumber[anyNumber.Count - 1];
+                    bool notInNumberSc = !(lastNumber.Index >= numberSc.Index && lastNumber.Index + lastNumber.Length <= numberSc.Index + numberSc.Length);
+
+                    if (notInNumberSc)
+                    {
+                        source = source.Remove(lastNumber.Index, lastNumber.Length);
+                        buildingIndex = lastNumber.Index;
+                        buildingAO = new AddressObject(lastNumber.Value, new AddressObjectType(null, null, (int)ObjectLevel.House));
+                    }
                 }
             }
 
             //проверяем корпус  цифру
             bool housingAddedAsRoom = false;
             var housingNumber = regexGroup.GetInnerMatch(housingNumberPattern, "[0-9]+", source);
-            if (buildingAO!=null && housingNumber!=null)
+            if (buildingAO != null && housingNumber != null)
             {
                 source = source.Remove(housingNumber.outer.Index, housingNumber.outer.Length);
 
                 var buildingWithHousing = new Variant();
                 buildingWithHousing.Add(new AddressObject(buildingAO.Name + "/" + housingNumber.inner.Value,
-                    new AddressObjectType(null, null, (int)ObjectLevel.House)), 3);
+                    new AddressObjectType(null, "дом с корпусом", (int)ObjectLevel.House)), 3);
                 buildingWithHousing.Add(roomAO);
                 variants.Add(buildingWithHousing);
 
@@ -200,7 +212,7 @@ namespace AddressSplitterLib
                 var buildingWithLitter = new Variant();
                 buildingWithLitter.Add(new AddressObject
                     (buildingAO.Name + housingLitter.Value[housingLitter.Value.Length - 1],
-                                                new AddressObjectType(null, null, (int)ObjectLevel.House)), 3);
+                                                new AddressObjectType(null,"дом с корпусом", (int)ObjectLevel.House)), 3);
                 buildingWithLitter.Add(roomAO);
                 variants.Add(buildingWithLitter);
             }
@@ -281,7 +293,7 @@ namespace AddressSplitterLib
                     clearedString = clearedString.Remove(_amatch.Index, _amatch.Length);
                 }
 
-                clearedString = clearedString.Trim(' ').Trim('.').Replace("  ", " ").Replace("  ", " ");
+                clearedString = clearedString.Trim(' ').Replace("  ", " ").Replace("  ", " ");
 
                 if (AOTypes.Count == 1 && regexGroup.GetMatches(anyWordPattern, clearedString).Count == 1)
                 {
@@ -335,7 +347,7 @@ namespace AddressSplitterLib
 
             }
 
-            int countVariants = (clearSource.Count - 1) * 2;
+            int countVariants =(int) Math.Pow(2,(clearSource.Count - 1));
 
             int cur;
 

@@ -34,6 +34,7 @@ namespace AddressSplitterLib.AO
                     level = objectType.Level
                 };
 
+                objectType.AbbreviatedName = objectType.AbbreviatedName?.Replace(".", @"\.").Replace("/", @"\/");
                 objectTypes.Add(key, objectType);
             }
             catch (Exception)
@@ -82,7 +83,7 @@ namespace AddressSplitterLib.AO
 
             foreach (var obj in objectTypes)
             {
-                if (obj.Key.abbreviatedName == abbreviatedName) types.Add(obj.Value);
+                if (obj.Value.AbbreviatedName == abbreviatedName) types.Add(obj.Value);
             }
             return types;
         }
