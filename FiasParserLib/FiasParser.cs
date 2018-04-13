@@ -22,6 +22,8 @@ namespace FiasParserLib
         {
             bannedAbbriviatedNames = new List<string>();
             bannedAbbriviatedNames.Add("к.");
+            bannedAbbriviatedNames.Add("вал");
+
             sb = new StringBuilder();
             dataContext = new FiasClassesDataContext();
             dictionary = GetDictionaryFromSql();
@@ -134,11 +136,11 @@ namespace FiasParserLib
                 if (item.PrevObjects.Count > 0 && item.PrevObjects[0] != null && maxLevelObj < 8) bestVariants.Add(item);
             }
 
-            if (bestVariants.Count == 1)
+            if (bestVariants.Count > 0)
             {
                 if (maxLevelObj == 9)
                 {
-                    if (bestVariants[0].RoomGuids.Count > 0) throw new ManyObjectsFindedException(bestVariants[0],
+                    if (bestVariants[0].RoomGuids.Count > 1) throw new ManyObjectsFindedException(bestVariants[0],
                                "Найдено много помещений в БД с одинаковым номером, требуется уточнить.");
                     if (bestVariants[0].RoomGuids.Count == 1)
                     {
@@ -176,7 +178,6 @@ namespace FiasParserLib
                 };
                 return prObject;
             }
-            else if (bestVariants.Count > 1) throw new NoOneGoodVariantException(bestVariants, "По базе найдено очень много вариаций это адреса, требуется уточнение.");
             throw new AddressNotFound("Не удалось найти такой адрес, требуется ручной ввод.");
         }
 
@@ -195,9 +196,17 @@ namespace FiasParserLib
                 if(house.Type?.AbbreviatedName=="дом с корпусом"&& housing.Length>0)
                 {
                     var qWithLitter = (from h in dataContext.House
-                                       where h.HOUSENUM == nameWithoutHousing && h.AOGUID == obj.AOGUID && h.BUILDNUM == housing
+                                       where h.HOUSENUM == nameWithoutHousing && h.AOGUID == obj.AOGUID && h.BUILDNUM == housing && h.STRUCNUM == null
                                        select h.HOUSEGUID).ToList().Distinct();
                     houseGuids.AddRange(qWithLitter);
+
+                    if (houseGuids.Count == 0)
+                    {
+                        var qWithLitter2 = (from h in dataContext.House
+                                           where h.HOUSENUM == nameWithoutHousing && h.AOGUID == obj.AOGUID && h.BUILDNUM == housing
+                                           select h.HOUSEGUID).ToList().Distinct();
+                        houseGuids.AddRange(qWithLitter2);
+                    }
                 }
 
                 if (houseGuids.Count == 0)

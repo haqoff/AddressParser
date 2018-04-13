@@ -46,7 +46,7 @@ namespace FiasParserGUI
                 dataAdapter.Fill(table);
                 Text = "Парсер адресов, загружено: " + path;
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 MessageBox.Show(ex.Message);
             }
@@ -63,36 +63,43 @@ namespace FiasParserGUI
             if (table == null) return;
 
             const int columnIndex = 0;
-            var result = new string[table.Rows.Count, 3];
-            //var parser = new FiasParser();
+            table.Columns.Add("Parsed Address", typeof(System.String));
+            table.Columns.Add("ID Type", typeof(System.String));
+            table.Columns.Add("GUID", typeof(System.String));
+            int countUknown = 0;
+
+            var parser = new FiasParser();
             DateTime startTime = DateTime.Now;
 
             pbParse.Invoke(new Action(() => { pbParse.Maximum = table.Rows.Count; }));
 
             for (int i = 0; i < table.Rows.Count; i++)
             {
-                string value = table.Rows[i][columnIndex].ToString();
-                // ParseResult r = parser.Parse(value);
-
-                var r = new ParseResult()
+                try
                 {
-                    address = "Такой то адрес",
-                    id = "такой то d",
-                    type = IdType.House                   
-                };
+                    string value = table.Rows[i][columnIndex].ToString();
+                    ParseResult r = parser.Parse(value);
 
-                result[i, 0] = r.address;
-                result[i, 1] = r.type.ToString();
-                result[i, 2] = r.id;
+                    table.Rows[i]["Parsed Address"] = r.address;
+                    table.Rows[i]["ID Type"] = r.type.ToString();
+                    table.Rows[i]["GUID"] = r.id;
+                }
+                catch(Exception ex)
+                {
+                    table.Rows[i]["Parsed Address"] = ex.Message;
+                    countUknown++;
+                }
 
                 //progress call
-                TimeSpan timeRemaining = TimeSpan.FromTicks((long)(DateTime.Now.Subtract(startTime).Ticks * (table.Rows.Count - (i + 1)) /(float) (i + 1)));
+                TimeSpan timeRemaining = TimeSpan.FromTicks((long)(DateTime.Now.Subtract(startTime).Ticks * (table.Rows.Count - (i + 1)) / (float)(i + 1)));
 
                 pbParse.Invoke(new Action(() => { lblRemaingTime.Text = timeRemaining.ToString(); }));
                 pbParse.Invoke(new Action(() => { pbParse.Increment(1); }));
                 pbParse.Invoke(new Action(() => { lblProgress.Text = (i + 1).ToString() + "/" + table.Rows.Count; }));
-                
+
             }
+            dgvContent.Invoke(new Action(() => { dgvContent.DataSource = table; }));
+            pbParse.Invoke(new Action(() => { lblCountUknown.Text = "Кол-во неизвестных: " + countUknown; }));
             MessageBox.Show("всё");
         }
     }

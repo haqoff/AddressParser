@@ -33,16 +33,17 @@
             this.tbSheetName = new System.Windows.Forms.TextBox();
             this.btnParse = new System.Windows.Forms.Button();
             this.pParsingProgress = new System.Windows.Forms.Panel();
-            this.pbParse = new System.Windows.Forms.ProgressBar();
-            this.lblProgress = new System.Windows.Forms.Label();
             this.lblRemaingTime = new System.Windows.Forms.Label();
+            this.lblProgress = new System.Windows.Forms.Label();
+            this.pbParse = new System.Windows.Forms.ProgressBar();
+            this.lblCountUknown = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.dgvContent)).BeginInit();
             this.pParsingProgress.SuspendLayout();
             this.SuspendLayout();
             // 
             // btnLoadFromFile
             // 
-            this.btnLoadFromFile.Location = new System.Drawing.Point(48, 12);
+            this.btnLoadFromFile.Location = new System.Drawing.Point(67, 12);
             this.btnLoadFromFile.Name = "btnLoadFromFile";
             this.btnLoadFromFile.Size = new System.Drawing.Size(99, 23);
             this.btnLoadFromFile.TabIndex = 0;
@@ -55,19 +56,19 @@
             this.dgvContent.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.dgvContent.Location = new System.Drawing.Point(12, 41);
             this.dgvContent.Name = "dgvContent";
-            this.dgvContent.Size = new System.Drawing.Size(387, 253);
+            this.dgvContent.Size = new System.Drawing.Size(717, 253);
             this.dgvContent.TabIndex = 1;
             // 
             // tbSheetName
             // 
-            this.tbSheetName.Location = new System.Drawing.Point(270, 14);
+            this.tbSheetName.Location = new System.Drawing.Point(185, 12);
             this.tbSheetName.Name = "tbSheetName";
             this.tbSheetName.Size = new System.Drawing.Size(100, 20);
             this.tbSheetName.TabIndex = 2;
             // 
             // btnParse
             // 
-            this.btnParse.Location = new System.Drawing.Point(183, 300);
+            this.btnParse.Location = new System.Drawing.Point(332, 300);
             this.btnParse.Name = "btnParse";
             this.btnParse.Size = new System.Drawing.Size(75, 23);
             this.btnParse.TabIndex = 3;
@@ -77,44 +78,54 @@
             // 
             // pParsingProgress
             // 
+            this.pParsingProgress.Controls.Add(this.lblCountUknown);
             this.pParsingProgress.Controls.Add(this.lblRemaingTime);
             this.pParsingProgress.Controls.Add(this.lblProgress);
             this.pParsingProgress.Controls.Add(this.pbParse);
             this.pParsingProgress.Location = new System.Drawing.Point(12, 329);
             this.pParsingProgress.Name = "pParsingProgress";
-            this.pParsingProgress.Size = new System.Drawing.Size(492, 80);
+            this.pParsingProgress.Size = new System.Drawing.Size(717, 80);
             this.pParsingProgress.TabIndex = 4;
-            // 
-            // pbParse
-            // 
-            this.pbParse.Location = new System.Drawing.Point(12, 15);
-            this.pbParse.Name = "pbParse";
-            this.pbParse.Size = new System.Drawing.Size(467, 23);
-            this.pbParse.TabIndex = 0;
-            // 
-            // lblProgress
-            // 
-            this.lblProgress.AutoSize = true;
-            this.lblProgress.Location = new System.Drawing.Point(211, 41);
-            this.lblProgress.Name = "lblProgress";
-            this.lblProgress.Size = new System.Drawing.Size(35, 13);
-            this.lblProgress.TabIndex = 1;
-            this.lblProgress.Text = "label1";
             // 
             // lblRemaingTime
             // 
             this.lblRemaingTime.AutoSize = true;
-            this.lblRemaingTime.Location = new System.Drawing.Point(395, 41);
+            this.lblRemaingTime.Location = new System.Drawing.Point(427, 41);
             this.lblRemaingTime.Name = "lblRemaingTime";
             this.lblRemaingTime.Size = new System.Drawing.Size(56, 13);
             this.lblRemaingTime.TabIndex = 2;
             this.lblRemaingTime.Text = "Осталось";
             // 
+            // lblProgress
+            // 
+            this.lblProgress.AutoSize = true;
+            this.lblProgress.Location = new System.Drawing.Point(227, 41);
+            this.lblProgress.Name = "lblProgress";
+            this.lblProgress.Size = new System.Drawing.Size(35, 13);
+            this.lblProgress.TabIndex = 1;
+            this.lblProgress.Text = "label1";
+            // 
+            // pbParse
+            // 
+            this.pbParse.Location = new System.Drawing.Point(12, 15);
+            this.pbParse.Name = "pbParse";
+            this.pbParse.Size = new System.Drawing.Size(689, 23);
+            this.pbParse.TabIndex = 0;
+            // 
+            // lblCountUknown
+            // 
+            this.lblCountUknown.AutoSize = true;
+            this.lblCountUknown.Location = new System.Drawing.Point(577, 41);
+            this.lblCountUknown.Name = "lblCountUknown";
+            this.lblCountUknown.Size = new System.Drawing.Size(35, 13);
+            this.lblCountUknown.TabIndex = 3;
+            this.lblCountUknown.Text = "label1";
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(516, 415);
+            this.ClientSize = new System.Drawing.Size(741, 415);
             this.Controls.Add(this.pParsingProgress);
             this.Controls.Add(this.btnParse);
             this.Controls.Add(this.tbSheetName);
@@ -140,6 +151,7 @@
         private System.Windows.Forms.ProgressBar pbParse;
         private System.Windows.Forms.Label lblProgress;
         private System.Windows.Forms.Label lblRemaingTime;
+        private System.Windows.Forms.Label lblCountUknown;
     }
 }
 

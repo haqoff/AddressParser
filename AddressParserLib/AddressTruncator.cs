@@ -90,8 +90,16 @@ namespace AddressSplitterLib
             int buildingIndex = -1;
 
             //парсим строение по 8 паттерну(по словарю)
-            source = regexGroup.Replace(buildingLitterPattern, source, "");
-            source = regexGroup.Replace("(?<=[0-9]+)[^а-я0-9]*стр[^а-я0-9]*(?=[0-9]+)", source, "/");
+            source = regexGroup.Replace(buildingLitterPattern, source, "");          
+            if (regexGroup.GetMatch(@"[0-9]+\/[0-9]+", source).Success)
+            {
+                source = regexGroup.Replace("(?<=[0-9]+)[^а-я0-9]*стр[^а-я0-9]*[0-9]+", source, "");
+            }
+            else
+            {
+                source = regexGroup.Replace("(?<=[0-9]+)[^а-я0-9]*стр[^а-я0-9]*(?=[0-9]+)", source, "/");
+            }
+
             var numberSc = regexGroup.GetMatch("[0-9]+ [а-я]+(а|я)([^а-я]|$)", source);
 
             var building = regexGroup.GetInnerMatch(fullHouseTypesPattern, houseTypesMultiPattern, source);
@@ -135,7 +143,7 @@ namespace AddressSplitterLib
             }
 
             //ищем дом по патерну 7:(ул|ш)[^а-я]*[0-9]+ 
-            
+
             if (buildingAO == null)
             {
                 var housePredict = regexGroup.GetMatch(housePredictPattern, source);
@@ -181,7 +189,7 @@ namespace AddressSplitterLib
             }
 
             //проверяем корпус  цифру
-            bool housingAddedAsRoom = false;
+            bool housingAdded = false;
             var housingNumber = regexGroup.GetInnerMatch(housingNumberPattern, "[0-9]+", source);
             if (buildingAO != null && housingNumber != null)
             {
@@ -199,7 +207,7 @@ namespace AddressSplitterLib
                     housingAsRoom.Add(buildingAO);
                     housingAsRoom.Add(new AddressObject(housingNumber.inner.Value, new AddressObjectType(null, null, (int)ObjectLevel.Room)), 2);
                     variants.Add(housingAsRoom);
-                    housingAddedAsRoom = true;
+                    housingAdded = true;
                 }
             }
 
@@ -212,13 +220,13 @@ namespace AddressSplitterLib
                 var buildingWithLitter = new Variant();
                 buildingWithLitter.Add(new AddressObject
                     (buildingAO.Name + housingLitter.Value[housingLitter.Value.Length - 1],
-                                                new AddressObjectType(null,"дом с корпусом", (int)ObjectLevel.House)), 3);
+                                                new AddressObjectType(null, "дом с корпусом", (int)ObjectLevel.House)), 3);
                 buildingWithLitter.Add(roomAO);
                 variants.Add(buildingWithLitter);
             }
 
 
-            if (!housingAddedAsRoom)
+            if (!housingAdded)
             {
                 var defVar = new Variant();
                 defVar.Add(buildingAO);
@@ -344,10 +352,10 @@ namespace AddressSplitterLib
 
                 n.Add(new AddressObject(clearSource[0]));
                 result.Add(n);
-
+                return result;
             }
 
-            int countVariants =(int) Math.Pow(2,(clearSource.Count - 1));
+            int countVariants = (int)Math.Pow(2, (clearSource.Count - 1));
 
             int cur;
 
