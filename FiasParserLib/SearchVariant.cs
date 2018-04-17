@@ -10,6 +10,7 @@ namespace FiasParserLib
     {
         public int CountFinded { get; set; }
         public StringBuilder FullAddress { get; set; }
+        public string LastFindedName { get; set; }
         public List<ObjectMargins> PrevObjects { get; set; }
         public List<string> HouseGuids { get; set; }
         public List<string> RoomGuids { get; set; }

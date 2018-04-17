@@ -59,6 +59,7 @@ namespace FiasParserLib
                         if (sVariant.RoomGuids.Count > 0)
                         {
                             sVariant.FullAddress.Append("помещение ");
+                            sVariant.LastFindedName = versionObj.Name;
                             sVariant.FullAddress.Append(versionObj.Name);
                             sVariant.FullAddress.Append("-->");
                         }
@@ -72,6 +73,7 @@ namespace FiasParserLib
                         if (sVariant.HouseGuids.Count > 0)
                         {
                             sVariant.FullAddress.Append("строение ");
+                            sVariant.LastFindedName = versionObj.Name;
                             sVariant.FullAddress.Append(versionObj.Name);
                             sVariant.FullAddress.Append("-->");
                         }
@@ -83,6 +85,7 @@ namespace FiasParserLib
                     if (newObjs.Count == 1 && cur == variant.GetCount() - 1) alreadyFinded = true;
                     if (newObjs.Count > 0 && newObjs[newObjs.Count - 1] != null)
                     {
+                        sVariant.LastFindedName = versionObj.Name;
                         sVariant.FullAddress.Append(versionObj.Name);
                         sVariant.FullAddress.Append("-->");
                         sVariant.PrevObjects = newObjs;
@@ -147,6 +150,7 @@ namespace FiasParserLib
                         var prRoom = new ParseResult()
                         {
                             id = bestVariants[0].RoomGuids[0],
+                            lastFindedName = bestVariants[0].LastFindedName,
                             type = IdType.Room,
                             address = bestVariants[0].FullAddress.ToString()
                         };
@@ -162,6 +166,7 @@ namespace FiasParserLib
                     var prHouse = new ParseResult()
                     {
                         id = bestVariants[0].HouseGuids[0],
+                        lastFindedName = bestVariants[0].LastFindedName,
                         type = IdType.House,
                         address = bestVariants[0].FullAddress.ToString()
                     };
@@ -173,6 +178,7 @@ namespace FiasParserLib
                 var prObject = new ParseResult()
                 {
                     id = bestVariants[0].PrevObjects[0].AOGUID,
+                    lastFindedName = bestVariants[0].LastFindedName,
                     type = IdType.Object,
                     address = bestVariants[0].FullAddress.ToString()
                 };
@@ -374,6 +380,140 @@ namespace FiasParserLib
         }
 
 
+        public List<ObjectKnownMargins> SelectAllObject(string formalName, string parentGUID, int prevAOLEVEL)
+        {
+            List<ObjectKnownMargins> result;
+
+            if (parentGUID == null)
+            {
+                result = (from obj in dataContext.Object
+                         where obj.FORMALNAME.StartsWith(formalName)
+                         select new ObjectKnownMargins()
+                         {
+                             AOGUID = obj.AOGUID,
+                             AOLEVEL = obj.AOLEVEL,
+                             FORMALNAME = obj.FORMALNAME,
+                             SHORTNAME = obj.SHORTNAME                               
+                         }).ToList();
+
+                int minAOLEVEL = int.MaxValue;
+                for (int i = 0; i < result.Count; i++)
+                {
+                    if (result[i].AOLEVEL < minAOLEVEL) minAOLEVEL = result[i].AOLEVEL;
+                }
+
+                for (int i = 0; i < result.Count; i++)
+                {
+                    if (result[i].AOLEVEL != minAOLEVEL)
+                    {
+                        result.RemoveAt(i);
+                        i--;                       
+                    }
+                }
+            }
+            else
+            {
+                result = (from obj in dataContext.Object
+                         where obj.FORMALNAME.Contains(formalName) && obj.PARENTGUID==parentGUID && obj.AOLEVEL> prevAOLEVEL
+                         select new ObjectKnownMargins()
+                         {
+                             AOGUID = obj.AOGUID,
+                             AOLEVEL = obj.AOLEVEL,
+                             FORMALNAME = obj.FORMALNAME,
+                             SHORTNAME = obj.SHORTNAME
+                         }).ToList();
+            }
+            for (int i = 0; i < result.Count; i++)
+            {
+                for (int j = i + 1; j < result.Count; j++)
+                {
+                    if (result[i].AOGUID == result[j].AOGUID) result.RemoveAt(j);
+                }
+            }
+            return result;
+        }
+
+        public List<HouseKnownMargins> SelectAllHouses(string aoGuid, string houseNum)
+        {
+            List<HouseKnownMargins> hs;
+            try
+            {
+                if (houseNum == null)
+                {
+                    hs = (from h in dataContext.House
+                          where h.AOGUID == aoGuid
+                          select new HouseKnownMargins()
+                          {
+                              HOUSENUM = h.HOUSENUM,
+                              BUILDNUM = h.BUILDNUM,
+                              HOUSEGUID = h.HOUSEGUID,
+                              STRUCTNUM = h.STRUCNUM
+                          }
+                             ).ToList();
+                }
+                else
+                {
+                    hs = (from h in dataContext.House
+                          where h.AOGUID == aoGuid && h.HOUSENUM.StartsWith(houseNum)
+                          select new HouseKnownMargins()
+                          {
+                              HOUSENUM = h.HOUSENUM,
+                              BUILDNUM = h.BUILDNUM,
+                              HOUSEGUID = h.HOUSEGUID,
+                              STRUCTNUM = h.STRUCNUM
+                          }
+                            ).ToList();
+                }
+            }catch(Exception ex)
+            {
+                hs = new List<HouseKnownMargins>();
+            }
+            for (int i = 0; i < hs.Count; i++)
+            {
+                for (int j = i + 1; j < hs.Count; j++)
+                {
+                    if (hs[i].HOUSEGUID == hs[j].HOUSEGUID) hs.RemoveAt(j);
+                }
+            }
+            return hs;
+        }
+
+        public List<RoomKnownMargins> SelectAllRoom(string houseGuid, string flatNumber)
+        {
+            List<RoomKnownMargins> rooms;
+
+            if(flatNumber==null)
+            {
+                rooms = (from r in dataContext.Room
+                         where r.HOUSEGUID == houseGuid
+                         select new RoomKnownMargins()
+                         {
+                             FLATNUMBER = r.FLATNUMBER,
+                             ROOMGUID = r.ROOMGUID                           
+                        }).ToList();
+            }
+            else
+            {
+                rooms = (from r in dataContext.Room
+                         where r.HOUSEGUID == houseGuid && r.FLATNUMBER.StartsWith(flatNumber)
+                         select new RoomKnownMargins()
+                         {
+                             FLATNUMBER = r.FLATNUMBER,
+                             ROOMGUID = r.ROOMGUID
+                         }).ToList();
+            }
+
+            for (int i = 0; i < rooms.Count; i++)
+            {
+                for (int j = i + 1; j < rooms.Count; j++)
+                {
+                    if (rooms[i].ROOMGUID == rooms[j].ROOMGUID) rooms.RemoveAt(j);
+                }
+            }
+            return rooms;
+        }
+
+
         public void Close()
         {
             dataContext.Dispose();
@@ -384,8 +524,10 @@ namespace FiasParserLib
     public struct ParseResult
     {
         public string id;
+        public string lastFindedName;
         public IdType type;
         public string address;
     }
+
 
 }

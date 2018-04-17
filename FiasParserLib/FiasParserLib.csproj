@@ -57,6 +57,7 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
+    <Compile Include="Result.cs" />
     <Compile Include="SearchVariant.cs" />
   </ItemGroup>
   <ItemGroup>
