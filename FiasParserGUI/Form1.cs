@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.OleDb;
-using System.IO;
 using System.Threading;
 using System.Windows.Forms;
 using Excel = Microsoft.Office.Interop.Excel;
@@ -146,15 +145,15 @@ namespace FiasParserGUI
             {
                 textBox1.Text = AOGUID_dic[cb].objects[cb.SelectedIndex].AOGUID;
             }
-            else if (cb.SelectedIndex > AOGUID_dic[cb].objects.Count - 1 
+            else if (cb.SelectedIndex > AOGUID_dic[cb].objects.Count - 1
                 && cb.SelectedIndex < AOGUID_dic[cb].objects.Count + AOGUID_dic[cb].houses.Count)
             {
                 textBox1.Text = AOGUID_dic[cb].houses[cb.SelectedIndex - AOGUID_dic[cb].objects.Count].HOUSEGUID;
             }
-            else if (cb.SelectedIndex > AOGUID_dic[cb].objects.Count + AOGUID_dic[cb].houses.Count - 1 
+            else if (cb.SelectedIndex > AOGUID_dic[cb].objects.Count + AOGUID_dic[cb].houses.Count - 1
                 && cb.SelectedIndex < AOGUID_dic[cb].objects.Count + AOGUID_dic[cb].houses.Count + AOGUID_dic[cb].rooms.Count)
             {
-                textBox1.Text = AOGUID_dic[cb].rooms[cb.SelectedIndex - AOGUID_dic[cb].objects.Count 
+                textBox1.Text = AOGUID_dic[cb].rooms[cb.SelectedIndex - AOGUID_dic[cb].objects.Count
                     - AOGUID_dic[cb].houses.Count].ROOMGUID;
             }
 
@@ -195,7 +194,7 @@ namespace FiasParserGUI
             AOGUID_dic[saveCB] = guids;
 
             //todo
-            if (guids.objects?.Count == 0 && guids.houses?.Count == 0 && guids.rooms?.Count ==0)
+            if (guids.objects?.Count == 0 && guids.houses?.Count == 0 && guids.rooms?.Count == 0)
                 lblLoading.Invoke(new Action(() => { lblLoading.Text = "-"; }));
             else lblLoading.Invoke(new Action(() => { lblLoading.Text = "Найдено: " + saveCB.Items.Count; }));
 
@@ -245,8 +244,8 @@ namespace FiasParserGUI
                         saveParentGuid = AOGUID_dic[prev].objects[prev.SelectedIndex].AOGUID;
                     }
 
-                    else if (prev.SelectedIndex > AOGUID_dic[prev].objects.Count 
-                        && prev.SelectedIndex < AOGUID_dic[prev].objects.Count+ AOGUID_dic[prev].houses.Count)
+                    else if (prev.SelectedIndex > AOGUID_dic[prev].objects.Count
+                        && prev.SelectedIndex < AOGUID_dic[prev].objects.Count + AOGUID_dic[prev].houses.Count)
                     {
                         saveParentGuid = AOGUID_dic[prev].houses[prev.SelectedIndex - AOGUID_dic[prev].objects.Count].HOUSEGUID;
                     }
@@ -333,8 +332,8 @@ namespace FiasParserGUI
                 table.Rows[dgvContent.FirstDisplayedScrollingRowIndex][IDTYPE_FIELD] = IdType.Object;
             }
 
-           else if (cb.SelectedIndex >= AOGUID_dic[cb].objects.Count
-                && cb.SelectedIndex < AOGUID_dic[cb].objects.Count + AOGUID_dic[cb].houses.Count)
+            else if (cb.SelectedIndex >= AOGUID_dic[cb].objects.Count
+                 && cb.SelectedIndex < AOGUID_dic[cb].objects.Count + AOGUID_dic[cb].houses.Count)
             {
                 //house
                 table.Rows[dgvContent.FirstDisplayedScrollingRowIndex][GUID_FIELD] = AOGUID_dic[cb].houses[cb.SelectedIndex - AOGUID_dic[cb].objects.Count].HOUSEGUID;
@@ -449,7 +448,7 @@ namespace FiasParserGUI
             catch (Exception ex)
             {
                 obj = null;
-                MessageBox.Show("Exception Occurred while releasing object " + ex.ToString());
+                MessageBox.Show("Возникла ошибка при попытке освободить обьект. " + ex.ToString());
             }
             finally
             {

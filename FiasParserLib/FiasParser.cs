@@ -464,7 +464,7 @@ namespace FiasParserLib
                           }
                             ).ToList();
                 }
-            }catch(Exception ex)
+            }catch(Exception)
             {
                 hs = new List<HouseKnownMargins>();
             }
