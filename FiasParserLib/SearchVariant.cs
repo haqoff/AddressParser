@@ -8,6 +8,9 @@ namespace FiasParserLib
 {
     public class SearchVariant
     {
+        /// <summary>
+        /// Кол-во найденных обьектов.
+        /// </summary>
         public int CountFinded { get; set; }
         public StringBuilder FullAddress { get; set; }
         public string LastFindedName { get; set; }

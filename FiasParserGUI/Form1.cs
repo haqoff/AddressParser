@@ -3,8 +3,10 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.OleDb;
+using System.IO;
 using System.Threading;
 using System.Windows.Forms;
+using Excel = Microsoft.Office.Interop.Excel;
 
 namespace FiasParserGUI
 {
@@ -45,23 +47,22 @@ namespace FiasParserGUI
 
         }
 
-        private void btnLoadFromFile_Click(object sender, EventArgs e)
+        private void btnParseFile_Click(object sender, EventArgs e)
         {
-            var odf = new OpenFileDialog
+            if (LoadFromFile())
             {
-                Filter = "Excel Files|*.xlsx"
-            };
-
-            if (odf.ShowDialog() == DialogResult.OK)
-            {
-                path = odf.FileName;
-                LoadToGridView();
+                table.Columns.Add(PARSEDNAME_FIELD, typeof(System.String));
+                table.Columns.Add(IDTYPE_FIELD, typeof(System.String));
+                table.Columns.Add(GUID_FIELD, typeof(System.String));
+                table.Columns.Add(LAST_FINDED_OBJECT_FIELED, typeof(System.String));
+                Thread th = new Thread(DoParse);
+                th.Start();
             }
         }
 
-        private void LoadToGridView()
+        private bool LoadToGridView()
         {
-            if (tbSheetName.Text == "") return;
+            if (tbSheetName.Text == "") return false;
 
             var connectionString = String.Format("Provider=Microsoft.Jet.OLEDB.4.0;Data Source={0}; Extended Properties=\"Excel 8.0;HDR=Yes;\";", path);
             var queryString = String.Format("Select * from [{0}$]", tbSheetName.Text);
@@ -73,18 +74,22 @@ namespace FiasParserGUI
                 table = new DataTable();
                 dataAdapter.Fill(table);
                 dgvContent.DataSource = table;
+
+                for (int i = 0; i < table.Rows.Count; i++)
+                {
+                    dgvContent.Rows[i].HeaderCell.Value = (i + 1).ToString();
+                }
+
+                dgvContent.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+
                 Text = "Парсер адресов, загружено: " + path;
+                return true;
             }
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message);
+                return false;
             }
-        }
-
-        private void btnParse_Click(object sender, EventArgs e)
-        {
-            Thread th = new Thread(DoParse);
-            th.Start();
         }
 
         private void DoParse()
@@ -92,10 +97,7 @@ namespace FiasParserGUI
             if (table == null) return;
 
             const int columnIndex = 0;
-            table.Columns.Add(PARSEDNAME_FIELD, typeof(System.String));
-            table.Columns.Add(IDTYPE_FIELD, typeof(System.String));
-            table.Columns.Add(GUID_FIELD, typeof(System.String));
-            table.Columns.Add(LAST_FINDED_OBJECT_FIELED, typeof(System.String));
+
             int countUknown = 0;
 
             DateTime startTime = DateTime.Now;
@@ -128,7 +130,7 @@ namespace FiasParserGUI
                 pbParse.Invoke(new Action(() => { lblProgress.Text = (i + 1).ToString() + "/" + table.Rows.Count; }));
 
             }
-           // dgvContent.Invoke(new Action(() => { dgvContent.DataSource = table; }));
+            dgvContent.Invoke(new Action(() => { dgvContent.DataSource = table; }));
 
             pbParse.Invoke(new Action(() => { lblCountUknown.Text = "Кол-во неизвестных: " + countUknown; }));
             MessageBox.Show("всё");
@@ -193,7 +195,7 @@ namespace FiasParserGUI
             AOGUID_dic[saveCB] = guids;
 
             //todo
-            if (guids.objects?.Count == 0 && guids.houses?.Count == 0)
+            if (guids.objects?.Count == 0 && guids.houses?.Count == 0 && guids.rooms?.Count ==0)
                 lblLoading.Invoke(new Action(() => { lblLoading.Text = "-"; }));
             else lblLoading.Invoke(new Action(() => { lblLoading.Text = "Найдено: " + saveCB.Items.Count; }));
 
@@ -236,33 +238,46 @@ namespace FiasParserGUI
                 if (index > 0)
                 {
                     var prev = comboBoxes[index - 1];
+                    if (prev.SelectedIndex == -1) return;
                     if (prev.SelectedIndex > -1 && prev.SelectedIndex < AOGUID_dic[prev].objects.Count)
                     {
                         saveAOLEVEL = AOGUID_dic[prev].objects[prev.SelectedIndex].AOLEVEL;
                         saveParentGuid = AOGUID_dic[prev].objects[prev.SelectedIndex].AOGUID;
                     }
 
-                    if (prev.SelectedIndex > AOGUID_dic[prev].objects.Count)
+                    else if (prev.SelectedIndex > AOGUID_dic[prev].objects.Count 
+                        && prev.SelectedIndex < AOGUID_dic[prev].objects.Count+ AOGUID_dic[prev].houses.Count)
                     {
                         saveParentGuid = AOGUID_dic[prev].houses[prev.SelectedIndex - AOGUID_dic[prev].objects.Count].HOUSEGUID;
+                    }
+                    else
+                    {
+                        int ind = prev.SelectedIndex - AOGUID_dic[prev].houses.Count - 1 - AOGUID_dic[prev].objects.Count - 1;
+                        saveParentGuid = AOGUID_dic[prev].rooms[ind].ROOMGUID;
                     }
                 }
 
                 lblLoading.Text = "Загрузка...";
-                Thread th = new Thread(Find);
-                th.Start();
                 cb.Items.Clear();
                 for (int i = index + 1; i < comboBoxes.Count; i++)
                 {
                     comboBoxes[i].Items.Clear();
                     comboBoxes[i].Text = "";
                 }
+                Thread th = new Thread(Find);
+                th.Start();
+
             }
         }
 
         private void btnNextEmpty_Click(object sender, EventArgs e)
         {
             if (table == null) return;
+            if (!string.IsNullOrEmpty(comboBox2.Text))
+            {
+                DialogResult dialogResult = MessageBox.Show("Вы точно хотите перейти к следующему?", "Предупреждение.", MessageBoxButtons.YesNo);
+                if (dialogResult == DialogResult.No) return;
+            }
             dgvContent.Focus();
 
             for (int i = dgvContent.FirstDisplayedScrollingRowIndex + 1; i < table.Rows.Count; i++)
@@ -281,20 +296,165 @@ namespace FiasParserGUI
                         c.Text = "";
                     }
 
-                    comboBox1.Text = row[LAST_FINDED_OBJECT_FIELED].ToString();
-                    AOGUID_dic[comboBox1].objects.Clear();
-                    AOGUID_dic[comboBox1].objects.Add(new ObjectKnownMargins()
+                    if (row[LAST_FINDED_OBJECT_FIELED].ToString() != "")
                     {
-                        AOGUID = row[GUID_FIELD].ToString(),
-                        FORMALNAME = row[LAST_FINDED_OBJECT_FIELED].ToString()
-                    });
-                    comboBox2.Focus();
+                        comboBox1.Text = row[LAST_FINDED_OBJECT_FIELED].ToString();
+                        comboBox1.Items.Add(row[LAST_FINDED_OBJECT_FIELED].ToString());
+                        comboBox1.SelectedIndex = 0;
+                        AOGUID_dic[comboBox1].objects.Clear();
+                        AOGUID_dic[comboBox1].objects.Add(new ObjectKnownMargins()
+                        {
+                            AOGUID = row[GUID_FIELD].ToString(),
+                            FORMALNAME = row[LAST_FINDED_OBJECT_FIELED].ToString()
+                        });
+                        comboBox2.Focus();
+                    }
 
                     break;
                 }
 
             }
 
+        }
+
+        private void btnWrite_Click(object sender, EventArgs e)
+        {
+            int lastId = 0;
+            for (int i = 0; i < comboBoxes.Count; i++)
+            {
+                if (comboBoxes[i].SelectedIndex > -1) lastId = i;
+            }
+            var cb = comboBoxes[lastId];
+
+            if (cb.SelectedIndex > -1 && cb.SelectedIndex < AOGUID_dic[cb].objects.Count)
+            {
+                //object
+                table.Rows[dgvContent.FirstDisplayedScrollingRowIndex][GUID_FIELD] = AOGUID_dic[cb].objects[cb.SelectedIndex].AOGUID;
+                table.Rows[dgvContent.FirstDisplayedScrollingRowIndex][IDTYPE_FIELD] = IdType.Object;
+            }
+
+           else if (cb.SelectedIndex >= AOGUID_dic[cb].objects.Count
+                && cb.SelectedIndex < AOGUID_dic[cb].objects.Count + AOGUID_dic[cb].houses.Count)
+            {
+                //house
+                table.Rows[dgvContent.FirstDisplayedScrollingRowIndex][GUID_FIELD] = AOGUID_dic[cb].houses[cb.SelectedIndex - AOGUID_dic[cb].objects.Count].HOUSEGUID;
+                table.Rows[dgvContent.FirstDisplayedScrollingRowIndex][IDTYPE_FIELD] = IdType.House;
+            }
+            else
+            {
+                //room
+                int ind = cb.SelectedIndex - AOGUID_dic[cb].houses.Count - 1 - AOGUID_dic[cb].objects.Count - 1;
+
+                table.Rows[dgvContent.FirstDisplayedScrollingRowIndex][GUID_FIELD] = AOGUID_dic[cb].rooms[ind].ROOMGUID;
+                table.Rows[dgvContent.FirstDisplayedScrollingRowIndex][IDTYPE_FIELD] = IdType.Room;
+            }
+
+            foreach (var c in comboBoxes)
+            {
+                c.Items.Clear();
+                c.Text = "";
+            }
+
+        }
+
+        private void btnLoadFromFile_Click(object sender, EventArgs e)
+        {
+            LoadFromFile();
+        }
+
+        private bool LoadFromFile()
+        {
+            var odf = new OpenFileDialog
+            {
+                Filter = "Excel Files|*.xlsx"
+            };
+
+
+            if (odf.ShowDialog() == DialogResult.OK)
+            {
+                path = odf.FileName;
+                if (!LoadToGridView()) return false;
+
+                foreach (DataGridViewColumn column in dgvContent.Columns)
+                {
+                    column.SortMode = DataGridViewColumnSortMode.NotSortable;
+                }
+                return true;
+            }
+            return false;
+        }
+
+        private void btnSaveAs_Click(object sender, EventArgs e)
+        {
+            SaveFileDialog sfd = new SaveFileDialog
+            {
+                Filter = "Excel Documents (*.xls)|*.xls",
+                FileName = "Inventory_Adjustment_Export.xls"
+            };
+            if (sfd.ShowDialog() == DialogResult.OK)
+            {
+                // Copy DataGridView results to clipboard
+                CopyAlltoClipboard();
+
+                object misValue = System.Reflection.Missing.Value;
+                Excel.Application xlexcel = new Excel.Application();
+
+                xlexcel.DisplayAlerts = false; // Without this you will get two confirm overwrite prompts
+                Excel.Workbook xlWorkBook = xlexcel.Workbooks.Add(misValue);
+                Excel.Worksheet xlWorkSheet = (Excel.Worksheet)xlWorkBook.Worksheets.get_Item(1);
+
+                // Paste clipboard results to worksheet range
+                Excel.Range CR = (Excel.Range)xlWorkSheet.Cells[1, 1];
+                CR.Select();
+                xlWorkSheet.PasteSpecial(CR, Type.Missing, Type.Missing, Type.Missing, Type.Missing, Type.Missing, true);
+
+                // For some reason column A is always blank in the worksheet. ¯\_(ツ)_/¯
+                // Delete blank column A and select cell A1
+                Excel.Range delRng = xlWorkSheet.get_Range("A:A").Cells;
+                delRng.Delete(Type.Missing);
+                xlWorkSheet.get_Range("A1").Select();
+
+                // Save the excel file under the captured location from the SaveFileDialog
+                xlWorkBook.SaveAs(sfd.FileName, Excel.XlFileFormat.xlWorkbookNormal, misValue, misValue, misValue, misValue, Excel.XlSaveAsAccessMode.xlExclusive, misValue, misValue, misValue, misValue, misValue);
+                xlexcel.DisplayAlerts = true;
+                xlWorkBook.Close(true, misValue, misValue);
+                xlexcel.Quit();
+
+                ReleaseObject(xlWorkSheet);
+                ReleaseObject(xlWorkBook);
+                ReleaseObject(xlexcel);
+
+                // Clear Clipboard and DataGridView selection
+                Clipboard.Clear();
+                dgvContent.ClearSelection();
+            }
+
+        }
+
+        private void CopyAlltoClipboard()
+        {
+            dgvContent.SelectAll();
+            DataObject dataObj = dgvContent.GetClipboardContent();
+            if (dataObj != null)
+                Clipboard.SetDataObject(dataObj);
+        }
+
+        private void ReleaseObject(object obj)
+        {
+            try
+            {
+                System.Runtime.InteropServices.Marshal.ReleaseComObject(obj);
+                obj = null;
+            }
+            catch (Exception ex)
+            {
+                obj = null;
+                MessageBox.Show("Exception Occurred while releasing object " + ex.ToString());
+            }
+            finally
+            {
+                GC.Collect();
+            }
         }
     }
 }

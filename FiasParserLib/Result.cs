@@ -32,7 +32,7 @@ namespace FiasParserLib
         {
             var sb = new StringBuilder();
 
-            sb.Append("помещение:");
+            sb.Append("строение:");
             sb.Append(HOUSENUM);
             if (BUILDNUM != null)
             {
