@@ -48,8 +48,9 @@
             this.comboBox1 = new System.Windows.Forms.ComboBox();
             this.lblLoading = new System.Windows.Forms.Label();
             this.pMenu = new System.Windows.Forms.Panel();
-            this.btnLoadFromFile = new System.Windows.Forms.Button();
             this.btnSaveAs = new System.Windows.Forms.Button();
+            this.btnLoadFromFile = new System.Windows.Forms.Button();
+            this.lblLastWritedRow = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.dgvContent)).BeginInit();
             this.pParsingProgress.SuspendLayout();
             this.pCustomAddress.SuspendLayout();
@@ -70,6 +71,7 @@
             // 
             this.dgvContent.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.dgvContent.Location = new System.Drawing.Point(12, 41);
+            this.dgvContent.MultiSelect = false;
             this.dgvContent.Name = "dgvContent";
             this.dgvContent.Size = new System.Drawing.Size(995, 373);
             this.dgvContent.TabIndex = 1;
@@ -129,6 +131,7 @@
             // 
             // pCustomAddress
             // 
+            this.pCustomAddress.Controls.Add(this.lblLastWritedRow);
             this.pCustomAddress.Controls.Add(this.btnWrite);
             this.pCustomAddress.Controls.Add(this.btnNextEmpty);
             this.pCustomAddress.Controls.Add(this.textBox1);
@@ -252,6 +255,16 @@
             this.pMenu.Size = new System.Drawing.Size(992, 36);
             this.pMenu.TabIndex = 7;
             // 
+            // btnSaveAs
+            // 
+            this.btnSaveAs.Location = new System.Drawing.Point(860, 6);
+            this.btnSaveAs.Name = "btnSaveAs";
+            this.btnSaveAs.Size = new System.Drawing.Size(95, 23);
+            this.btnSaveAs.TabIndex = 9;
+            this.btnSaveAs.Text = "Сохранить как";
+            this.btnSaveAs.UseVisualStyleBackColor = true;
+            this.btnSaveAs.Click += new System.EventHandler(this.btnSaveAs_Click);
+            // 
             // btnLoadFromFile
             // 
             this.btnLoadFromFile.Location = new System.Drawing.Point(136, 7);
@@ -262,15 +275,14 @@
             this.btnLoadFromFile.UseVisualStyleBackColor = true;
             this.btnLoadFromFile.Click += new System.EventHandler(this.btnLoadFromFile_Click);
             // 
-            // btnSaveAs
+            // lblLastWritedRow
             // 
-            this.btnSaveAs.Location = new System.Drawing.Point(860, 6);
-            this.btnSaveAs.Name = "btnSaveAs";
-            this.btnSaveAs.Size = new System.Drawing.Size(95, 23);
-            this.btnSaveAs.TabIndex = 9;
-            this.btnSaveAs.Text = "Сохранить как";
-            this.btnSaveAs.UseVisualStyleBackColor = true;
-            this.btnSaveAs.Click += new System.EventHandler(this.btnSaveAs_Click);
+            this.lblLastWritedRow.AutoSize = true;
+            this.lblLastWritedRow.Location = new System.Drawing.Point(30, 420);
+            this.lblLastWritedRow.Name = "lblLastWritedRow";
+            this.lblLastWritedRow.Size = new System.Drawing.Size(161, 13);
+            this.lblLastWritedRow.TabIndex = 10;
+            this.lblLastWritedRow.Text = "Последняя записаная строка:";
             // 
             // MainForm
             // 
@@ -321,6 +333,7 @@
         private System.Windows.Forms.Panel pMenu;
         private System.Windows.Forms.Button btnLoadFromFile;
         private System.Windows.Forms.Button btnSaveAs;
+        private System.Windows.Forms.Label lblLastWritedRow;
     }
 }
 

@@ -17,7 +17,7 @@ namespace FiasParserGUI
         private const string LAST_FINDED_OBJECT_FIELED = "Last Finded Name";
 
 
-
+        private bool watingQuery;
         private string path;
         private DataTable table;
         private List<ComboBox> comboBoxes;
@@ -35,6 +35,7 @@ namespace FiasParserGUI
             InitializeComponent();
             AOGUID_dic = new Dictionary<ComboBox, Result>();
             comboBoxes = new List<ComboBox>();
+            watingQuery = false;
             try
             {
                 parser = new FiasParser();
@@ -50,6 +51,16 @@ namespace FiasParserGUI
         {
             if (LoadFromFile())
             {
+                try
+                {
+                    var x = table.Rows[0][PARSEDNAME_FIELD];
+                    MessageBox.Show("Вы попытались открыть и распарсить уже распарсенный файл. Он не будет парситься, а откроется как обычный.");
+                    return;
+                }
+                catch
+                {
+
+                }
                 table.Columns.Add(PARSEDNAME_FIELD, typeof(System.String));
                 table.Columns.Add(IDTYPE_FIELD, typeof(System.String));
                 table.Columns.Add(GUID_FIELD, typeof(System.String));
@@ -162,6 +173,7 @@ namespace FiasParserGUI
         private void Find()
         {
             var guids = new Result();
+            watingQuery = true;
             foreach (var item in parser.SelectAllObject(saveText, saveParentGuid, saveAOLEVEL))
             {
                 bool alreadyFinded = false;
@@ -202,6 +214,7 @@ namespace FiasParserGUI
             {
                 if (saveCB.Items.Count > 0) saveCB.SelectedIndex = 0;
             }));
+            watingQuery = false;
         }
 
         private void MainForm_Load(object sender, EventArgs e)
@@ -224,6 +237,7 @@ namespace FiasParserGUI
         {
             if (e.KeyCode == Keys.Enter)
             {
+                if (watingQuery) return;
                 var cb = sender as ComboBox;
 
                 if (string.IsNullOrEmpty(cb.Text)) return;
@@ -282,7 +296,16 @@ namespace FiasParserGUI
             for (int i = dgvContent.FirstDisplayedScrollingRowIndex + 1; i < table.Rows.Count; i++)
             {
                 var row = table.Rows[i];
-                var cell = row[IDTYPE_FIELD];
+                object cell = null;
+                try
+                {
+                    cell = row[IDTYPE_FIELD];
+                }
+                catch
+                {
+                    MessageBox.Show("Эта таблица не имеет распарсенных данных. Проверьте названия столбцов.", "Ошибка");
+                    return;
+                }
                 if ((string.IsNullOrEmpty(cell.ToString()) || "Object" == cell.ToString()))
                 {
                     dgvContent.ClearSelection();
@@ -299,13 +322,13 @@ namespace FiasParserGUI
                     {
                         comboBox1.Text = row[LAST_FINDED_OBJECT_FIELED].ToString();
                         comboBox1.Items.Add(row[LAST_FINDED_OBJECT_FIELED].ToString());
-                        comboBox1.SelectedIndex = 0;
                         AOGUID_dic[comboBox1].objects.Clear();
                         AOGUID_dic[comboBox1].objects.Add(new ObjectKnownMargins()
                         {
                             AOGUID = row[GUID_FIELD].ToString(),
                             FORMALNAME = row[LAST_FINDED_OBJECT_FIELED].ToString()
                         });
+                        comboBox1.SelectedIndex = 0;
                         comboBox2.Focus();
                     }
 
@@ -318,42 +341,74 @@ namespace FiasParserGUI
 
         private void btnWrite_Click(object sender, EventArgs e)
         {
+            if (comboBox1.Text == "") return;
+
+            try
+            {
+                table.Rows[0][GUID_FIELD].ToString();
+            }
+            catch
+            {
+                MessageBox.Show("Вы пытаетесь записать в таблицу, в которой нет распарсенных данных.");
+                return;
+            }
+
             int lastId = 0;
             for (int i = 0; i < comboBoxes.Count; i++)
             {
                 if (comboBoxes[i].SelectedIndex > -1) lastId = i;
             }
             var cb = comboBoxes[lastId];
+            int rowIndex;
+
+            try
+            {
+                rowIndex = dgvContent.SelectedRows[0].Index;
+            }
+            catch
+            {
+                MessageBox.Show("Чтобы записать, нужно выделить всю строку.");
+                return;
+            }
 
             if (cb.SelectedIndex > -1 && cb.SelectedIndex < AOGUID_dic[cb].objects.Count)
             {
                 //object
-                table.Rows[dgvContent.FirstDisplayedScrollingRowIndex][GUID_FIELD] = AOGUID_dic[cb].objects[cb.SelectedIndex].AOGUID;
-                table.Rows[dgvContent.FirstDisplayedScrollingRowIndex][IDTYPE_FIELD] = IdType.Object;
+                table.Rows[rowIndex][GUID_FIELD] = AOGUID_dic[cb].objects[cb.SelectedIndex].AOGUID;
+                table.Rows[rowIndex][IDTYPE_FIELD] = IdType.Object;
             }
 
             else if (cb.SelectedIndex >= AOGUID_dic[cb].objects.Count
                  && cb.SelectedIndex < AOGUID_dic[cb].objects.Count + AOGUID_dic[cb].houses.Count)
             {
                 //house
-                table.Rows[dgvContent.FirstDisplayedScrollingRowIndex][GUID_FIELD] = AOGUID_dic[cb].houses[cb.SelectedIndex - AOGUID_dic[cb].objects.Count].HOUSEGUID;
-                table.Rows[dgvContent.FirstDisplayedScrollingRowIndex][IDTYPE_FIELD] = IdType.House;
+                table.Rows[rowIndex][GUID_FIELD] = AOGUID_dic[cb].houses[cb.SelectedIndex - AOGUID_dic[cb].objects.Count].HOUSEGUID;
+                table.Rows[rowIndex][IDTYPE_FIELD] = IdType.House;
             }
-            else
+            else if (cb.SelectedIndex > -1)
             {
                 //room
                 int ind = cb.SelectedIndex - AOGUID_dic[cb].houses.Count - 1 - AOGUID_dic[cb].objects.Count - 1;
 
-                table.Rows[dgvContent.FirstDisplayedScrollingRowIndex][GUID_FIELD] = AOGUID_dic[cb].rooms[ind].ROOMGUID;
-                table.Rows[dgvContent.FirstDisplayedScrollingRowIndex][IDTYPE_FIELD] = IdType.Room;
+                table.Rows[rowIndex][GUID_FIELD] = AOGUID_dic[cb].rooms[ind].ROOMGUID;
+                table.Rows[rowIndex][IDTYPE_FIELD] = IdType.Room;
             }
+
+            table.Rows[rowIndex][PARSEDNAME_FIELD] = "Исправлено.";
+
+            int last = 0;
+            for (int i = 0; i < comboBoxes.Count; i++)
+            {
+                if (comboBoxes[i].SelectedIndex > -1) last = i;
+            }
+            table.Rows[rowIndex][LAST_FINDED_OBJECT_FIELED] = comboBoxes[last].Text;
 
             foreach (var c in comboBoxes)
             {
                 c.Items.Clear();
                 c.Text = "";
             }
-
+            lblLastWritedRow.Text = "Последняя записаная строка: " + (rowIndex + 1).ToString();
         }
 
         private void btnLoadFromFile_Click(object sender, EventArgs e)
@@ -365,7 +420,7 @@ namespace FiasParserGUI
         {
             var odf = new OpenFileDialog
             {
-                Filter = "Excel Files|*.xlsx"
+                Filter = "Excel Files|*.xlsx;*.xls"
             };
 
 
@@ -388,22 +443,35 @@ namespace FiasParserGUI
             SaveFileDialog sfd = new SaveFileDialog
             {
                 Filter = "Excel Documents (*.xls)|*.xls",
-                FileName = "Inventory_Adjustment_Export.xls"
+                FileName = "Parsed_Addresses_Export.xls"
             };
             if (sfd.ShowDialog() == DialogResult.OK)
             {
+                dgvContent.MultiSelect = true;
                 // Copy DataGridView results to clipboard
                 CopyAlltoClipboard();
 
                 object misValue = System.Reflection.Missing.Value;
-                Excel.Application xlexcel = new Excel.Application();
-
-                xlexcel.DisplayAlerts = false; // Without this you will get two confirm overwrite prompts
+                Excel.Application xlexcel = new Excel.Application
+                {
+                    DisplayAlerts = false // Without this you will get two confirm overwrite prompts
+                };
                 Excel.Workbook xlWorkBook = xlexcel.Workbooks.Add(misValue);
                 Excel.Worksheet xlWorkSheet = (Excel.Worksheet)xlWorkBook.Worksheets.get_Item(1);
 
+                // Format column D as text before pasting results, this was required for my data
+                Excel.Range rng = xlWorkSheet.get_Range("F:F").Cells;
+                rng.NumberFormat = "@";
+
+                for (int i = 0; i < dgvContent.Columns.Count; i++)
+                {
+                    var column = dgvContent.Columns[i];
+
+                    xlWorkSheet.Cells[1, i + 2] = column.HeaderCell.Value.ToString();
+                }
+
                 // Paste clipboard results to worksheet range
-                Excel.Range CR = (Excel.Range)xlWorkSheet.Cells[1, 1];
+                Excel.Range CR = (Excel.Range)xlWorkSheet.Cells[2, 1];
                 CR.Select();
                 xlWorkSheet.PasteSpecial(CR, Type.Missing, Type.Missing, Type.Missing, Type.Missing, Type.Missing, true);
 
@@ -426,6 +494,7 @@ namespace FiasParserGUI
                 // Clear Clipboard and DataGridView selection
                 Clipboard.Clear();
                 dgvContent.ClearSelection();
+                dgvContent.MultiSelect = false;
             }
 
         }
