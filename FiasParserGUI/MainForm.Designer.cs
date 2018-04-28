@@ -37,6 +37,7 @@
             this.lblProgress = new System.Windows.Forms.Label();
             this.pbParse = new System.Windows.Forms.ProgressBar();
             this.pCustomAddress = new System.Windows.Forms.Panel();
+            this.lblLastWritedRow = new System.Windows.Forms.Label();
             this.btnWrite = new System.Windows.Forms.Button();
             this.btnNextEmpty = new System.Windows.Forms.Button();
             this.textBox1 = new System.Windows.Forms.TextBox();
@@ -50,7 +51,7 @@
             this.pMenu = new System.Windows.Forms.Panel();
             this.btnSaveAs = new System.Windows.Forms.Button();
             this.btnLoadFromFile = new System.Windows.Forms.Button();
-            this.lblLastWritedRow = new System.Windows.Forms.Label();
+            this.btnSave = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.dgvContent)).BeginInit();
             this.pParsingProgress.SuspendLayout();
             this.pCustomAddress.SuspendLayout();
@@ -145,6 +146,15 @@
             this.pCustomAddress.Name = "pCustomAddress";
             this.pCustomAddress.Size = new System.Drawing.Size(222, 444);
             this.pCustomAddress.TabIndex = 5;
+            // 
+            // lblLastWritedRow
+            // 
+            this.lblLastWritedRow.AutoSize = true;
+            this.lblLastWritedRow.Location = new System.Drawing.Point(30, 420);
+            this.lblLastWritedRow.Name = "lblLastWritedRow";
+            this.lblLastWritedRow.Size = new System.Drawing.Size(161, 13);
+            this.lblLastWritedRow.TabIndex = 10;
+            this.lblLastWritedRow.Text = "Последняя записаная строка:";
             // 
             // btnWrite
             // 
@@ -246,6 +256,7 @@
             // pMenu
             // 
             this.pMenu.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.pMenu.Controls.Add(this.btnSave);
             this.pMenu.Controls.Add(this.btnSaveAs);
             this.pMenu.Controls.Add(this.btnLoadFromFile);
             this.pMenu.Controls.Add(this.btnParseFile);
@@ -257,7 +268,7 @@
             // 
             // btnSaveAs
             // 
-            this.btnSaveAs.Location = new System.Drawing.Point(860, 6);
+            this.btnSaveAs.Location = new System.Drawing.Point(892, 6);
             this.btnSaveAs.Name = "btnSaveAs";
             this.btnSaveAs.Size = new System.Drawing.Size(95, 23);
             this.btnSaveAs.TabIndex = 9;
@@ -275,14 +286,16 @@
             this.btnLoadFromFile.UseVisualStyleBackColor = true;
             this.btnLoadFromFile.Click += new System.EventHandler(this.btnLoadFromFile_Click);
             // 
-            // lblLastWritedRow
+            // btnSave
             // 
-            this.lblLastWritedRow.AutoSize = true;
-            this.lblLastWritedRow.Location = new System.Drawing.Point(30, 420);
-            this.lblLastWritedRow.Name = "lblLastWritedRow";
-            this.lblLastWritedRow.Size = new System.Drawing.Size(161, 13);
-            this.lblLastWritedRow.TabIndex = 10;
-            this.lblLastWritedRow.Text = "Последняя записаная строка:";
+            this.btnSave.Enabled = false;
+            this.btnSave.Location = new System.Drawing.Point(804, 6);
+            this.btnSave.Name = "btnSave";
+            this.btnSave.Size = new System.Drawing.Size(82, 23);
+            this.btnSave.TabIndex = 10;
+            this.btnSave.Text = "Сохранить";
+            this.btnSave.UseVisualStyleBackColor = true;
+            this.btnSave.Click += new System.EventHandler(this.btnSave_Click);
             // 
             // MainForm
             // 
@@ -334,6 +347,7 @@
         private System.Windows.Forms.Button btnLoadFromFile;
         private System.Windows.Forms.Button btnSaveAs;
         private System.Windows.Forms.Label lblLastWritedRow;
+        private System.Windows.Forms.Button btnSave;
     }
 }
 

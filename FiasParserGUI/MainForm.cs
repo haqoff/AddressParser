@@ -16,6 +16,8 @@ namespace FiasParserGUI
         private const string IDTYPE_FIELD = "ID TYPE";
         private const string LAST_FINDED_OBJECT_FIELED = "Last Finded Name";
 
+        private string lastSavePath;
+
 
         private bool watingQuery;
         private string path;
@@ -432,6 +434,7 @@ namespace FiasParserGUI
 
         private void btnSaveAs_Click(object sender, EventArgs e)
         {
+            if (dgvContent.Columns.Count == 0) return;
             SaveFileDialog sfd = new SaveFileDialog
             {
                 Filter = "Excel Documents (*.xls)|*.xls",
@@ -439,56 +442,91 @@ namespace FiasParserGUI
             };
             if (sfd.ShowDialog() == DialogResult.OK)
             {
-                dgvContent.MultiSelect = true;
-                // Copy DataGridView results to clipboard
-                CopyAlltoClipboard();
+                Save(sfd.FileName);
+                lastSavePath = sfd.FileName;
+                btnSave.Enabled = true;
+            }
+        }
 
-                object misValue = System.Reflection.Missing.Value;
-                Excel.Application xlexcel = new Excel.Application
-                {
-                    DisplayAlerts = false // Without this you will get two confirm overwrite prompts
-                };
-                Excel.Workbook xlWorkBook = xlexcel.Workbooks.Add(misValue);
-                Excel.Worksheet xlWorkSheet = (Excel.Worksheet)xlWorkBook.Worksheets.get_Item(1);
+        private void Save(string path)
+        {
+            dgvContent.MultiSelect = true;
+            // Copy DataGridView results to clipboard
+            CopyAlltoClipboard();
 
-                // Format column D as text before pasting results, this was required for my data
-                Excel.Range rng = xlWorkSheet.get_Range("F:F").Cells;
-                rng.NumberFormat = "@";
+            object misValue = System.Reflection.Missing.Value;
+            Excel.Application xlexcel = new Excel.Application
+            {
+                DisplayAlerts = false // Without this you will get two confirm overwrite prompts
+            };
+            Excel.Workbook xlWorkBook = xlexcel.Workbooks.Add(misValue);
+            Excel.Worksheet xlWorkSheet = (Excel.Worksheet)xlWorkBook.Worksheets.get_Item(1);
 
-                for (int i = 0; i < dgvContent.Columns.Count; i++)
-                {
-                    var column = dgvContent.Columns[i];
+            // Format column as text before pasting results, this was required for my data
+            var rangeColumnsNames = new string[]
+            {
+                    "A:A",
+                    "B:B",
+                    "C:C",
+                    "D:D",
+                    "E:E",
+                    "F:F",
+                    "G:G",
+                    "H:H",
+                    "I:I",
+                    "G:G",
+                    "K:K",
+                    "L:L",
+                    "M:M",
+                    "N:N",
+                    "O:O",
+                    "P:P",
+                    "Q:Q",
+                    "R:R",
+                    "S:S",
+                    "T:T",
+                    "U:U",
+                    "V:V",
+                    "W:W",
+                    "X:X",
+                    "Y:Y",
+                    "Z:Z"
+            };
+            Excel.Range rng = xlWorkSheet.get_Range(rangeColumnsNames[table.Columns.Count]).Cells;
+            rng.NumberFormat = "@";
 
-                    xlWorkSheet.Cells[1, i + 2] = column.HeaderCell.Value.ToString();
-                }
+            for (int i = 0; i < dgvContent.Columns.Count; i++)
+            {
+                var column = dgvContent.Columns[i];
 
-                // Paste clipboard results to worksheet range
-                Excel.Range CR = (Excel.Range)xlWorkSheet.Cells[2, 1];
-                CR.Select();
-                xlWorkSheet.PasteSpecial(CR, Type.Missing, Type.Missing, Type.Missing, Type.Missing, Type.Missing, true);
-
-                // For some reason column A is always blank in the worksheet. ¯\_(ツ)_/¯
-                // Delete blank column A and select cell A1
-                Excel.Range delRng = xlWorkSheet.get_Range("A:A").Cells;
-                delRng.Delete(Type.Missing);
-                xlWorkSheet.get_Range("A1").Select();
-
-                // Save the excel file under the captured location from the SaveFileDialog
-                xlWorkBook.SaveAs(sfd.FileName, Excel.XlFileFormat.xlWorkbookNormal, misValue, misValue, misValue, misValue, Excel.XlSaveAsAccessMode.xlExclusive, misValue, misValue, misValue, misValue, misValue);
-                xlexcel.DisplayAlerts = true;
-                xlWorkBook.Close(true, misValue, misValue);
-                xlexcel.Quit();
-
-                ReleaseObject(xlWorkSheet);
-                ReleaseObject(xlWorkBook);
-                ReleaseObject(xlexcel);
-
-                // Clear Clipboard and DataGridView selection
-                Clipboard.Clear();
-                dgvContent.ClearSelection();
-                dgvContent.MultiSelect = false;
+                xlWorkSheet.Cells[1, i + 2] = column.HeaderCell.Value.ToString();
             }
 
+            // Paste clipboard results to worksheet range
+            Excel.Range CR = (Excel.Range)xlWorkSheet.Cells[2, 1];
+            CR.Select();
+            xlWorkSheet.PasteSpecial(CR, Type.Missing, Type.Missing, Type.Missing, Type.Missing, Type.Missing, true);
+
+            // For some reason column A is always blank in the worksheet. ¯\_(ツ)_/¯
+            // Delete blank column A and select cell A1
+            Excel.Range delRng = xlWorkSheet.get_Range("A:A").Cells;
+            delRng.Delete(Type.Missing);
+            xlWorkSheet.get_Range("A1").Select();
+
+            // Save the excel file under the captured location from the SaveFileDialog
+            xlWorkBook.SaveAs(path, Excel.XlFileFormat.xlWorkbookNormal, misValue, misValue, misValue, misValue, Excel.XlSaveAsAccessMode.xlExclusive, misValue, misValue, misValue, misValue, misValue);
+            xlexcel.DisplayAlerts = true;
+            xlWorkBook.Close(true, misValue, misValue);
+            xlexcel.Quit();
+
+            ReleaseObject(xlWorkSheet);
+            ReleaseObject(xlWorkBook);
+            ReleaseObject(xlexcel);
+
+            // Clear Clipboard and DataGridView selection
+            Clipboard.Clear();
+            dgvContent.ClearSelection();
+            dgvContent.MultiSelect = false;
         }
 
         private void CopyAlltoClipboard()
@@ -515,6 +553,11 @@ namespace FiasParserGUI
             {
                 GC.Collect();
             }
+        }
+
+        private void btnSave_Click(object sender, EventArgs e)
+        {
+            if (!string.IsNullOrEmpty(lastSavePath)) Save(lastSavePath);
         }
     }
 }
