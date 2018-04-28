@@ -42,13 +42,7 @@ namespace FiasParserLib
     partial void InsertAddressObjectType(AddressObjectType instance);
     partial void UpdateAddressObjectType(AddressObjectType instance);
     partial void DeleteAddressObjectType(AddressObjectType instance);
-    #endregion
-		
-		public FiasClassesDataContext() : 
-				base(global::FiasParserLib.Properties.Settings.Default.fiasConnectionString, mappingSource)
-		{
-			OnCreated();
-		}
+    #endregion		
 		
 		public FiasClassesDataContext(string connection) : 
 				base(connection, mappingSource)

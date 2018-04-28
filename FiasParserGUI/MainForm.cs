@@ -30,21 +30,13 @@ namespace FiasParserGUI
         private ComboBox saveCB;
 
 
-        public MainForm()
+        public MainForm(FiasParser parser)
         {
             InitializeComponent();
             AOGUID_dic = new Dictionary<ComboBox, Result>();
             comboBoxes = new List<ComboBox>();
             watingQuery = false;
-            try
-            {
-                parser = new FiasParser();
-            }
-            catch (Exception)
-            {
-                MessageBox.Show("Не удалось присоединиться к БД.", "Ошибка");
-            }
-
+            this.parser = parser;
         }
 
         private void btnParseFile_Click(object sender, EventArgs e)

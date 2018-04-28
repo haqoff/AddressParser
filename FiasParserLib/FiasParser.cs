@@ -4,6 +4,7 @@ using AddressSplitterLib.Utils;
 using FiasParserLib.Exceptions;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 
@@ -18,17 +19,18 @@ namespace FiasParserLib
         private List<string> bannedAbbriviatedNames;
 
 
-        public FiasParser()
+        public FiasParser(string connectionString)
         {
+            dataContext = new FiasClassesDataContext(connectionString);
+            if (!dataContext.DatabaseExists()) throw new IOException("Не удалось подключиться к БД.");
+
             bannedAbbriviatedNames = new List<string>();
             bannedAbbriviatedNames.Add("к.");
             bannedAbbriviatedNames.Add("вал");
 
             sb = new StringBuilder();
-            dataContext = new FiasClassesDataContext();
             dictionary = GetDictionaryFromSql();
            
-
             dictionary.Add(new AddressSplitterLib.AddressObjectType("область", "область", 1, AddressSplitterLib.AddressObjectType.GenderNoun.Fiminine));
             dictionary.Add(new AddressSplitterLib.AddressObjectType("область", "обл", 1, AddressSplitterLib.AddressObjectType.GenderNoun.Fiminine));
             dictionary.Add(new AddressSplitterLib.AddressObjectType("проспект", "пр-т", 7));
