@@ -6,7 +6,10 @@ using System.Threading.Tasks;
 
 namespace FiasParserLib
 {
-    public enum IdType
+    /// <summary>
+    /// Тип таблицы
+    /// </summary>
+    public enum TableType
     {
         Object,     //Адресный обьект
         House,      //Строене

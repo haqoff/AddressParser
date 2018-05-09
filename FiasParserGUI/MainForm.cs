@@ -1,9 +1,7 @@
 ﻿using FiasParserLib;
 using System;
-using System.Collections.Generic;
 using System.Data;
-using System.Data.OleDb;
-using System.Threading;
+using System.IO;
 using System.Windows.Forms;
 using Excel = Microsoft.Office.Interop.Excel;
 
@@ -11,448 +9,42 @@ namespace FiasParserGUI
 {
     public partial class MainForm : Form
     {
-        private const string GUID_FIELD = "GUID";
-        private const string PARSEDNAME_FIELD = "PARSEDNAME";
-        private const string IDTYPE_FIELD = "ID TYPE";
-        private const string LAST_FINDED_OBJECT_FIELED = "Last Finded Name";
-
-        private string lastSavePath;
-
-
-        private bool watingQuery;
-        private string path;
-        private DataTable table;
-        private List<ComboBox> comboBoxes;
-        private Dictionary<ComboBox, Result> AOGUID_dic;
         private FiasParser parser;
 
-        private string saveText;
-        private string saveParentGuid;
-        private int saveAOLEVEL;
-        private ComboBox saveCB;
+        private bool fileOpened;
+        private string openedFilePath;
+        private bool hasUnsavedChanges;
+
+        public const string DISTRICT_FIELD = "Округ";
+        public const string REGION_FIELD = "Область";
+        public const string CITY_FIELD = "Населённый пункт";
+        public const string STREET_FIELD = "Улица";
+        public const string HOUSE_FIELD = "Дом";
+        public const string STATUS_FIELD = "Статус";
 
 
         public MainForm(FiasParser parser)
         {
             InitializeComponent();
-            AOGUID_dic = new Dictionary<ComboBox, Result>();
-            comboBoxes = new List<ComboBox>();
-            watingQuery = false;
             this.parser = parser;
+            fileOpened = false;
+            hasUnsavedChanges = false;
+
+            dgvContent.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+            dgvContent.AllowUserToDeleteRows = false;
+            dgvContent.AllowUserToAddRows = false;
+            dgvContent.AllowUserToOrderColumns = false;
         }
 
-        private void btnParseFile_Click(object sender, EventArgs e)
+
+        private void Save(DataGridView dgv, string path)
         {
-            if (LoadFromFile())
-            {
-                try
-                {
-                    var x = table.Rows[0][PARSEDNAME_FIELD];
-                    MessageBox.Show("Вы попытались открыть и распарсить уже распарсенный файл. Он не будет парситься, а откроется как обычный.");
-                    return;
-                }
-                catch
-                {
-
-                }
-                table.Columns.Add(PARSEDNAME_FIELD, typeof(System.String));
-                table.Columns.Add(IDTYPE_FIELD, typeof(System.String));
-                table.Columns.Add(GUID_FIELD, typeof(System.String));
-                table.Columns.Add(LAST_FINDED_OBJECT_FIELED, typeof(System.String));
-                Thread th = new Thread(DoParse);
-                th.Start();
-            }
-        }
-
-        private bool LoadToGridView()
-        {
-            if (tbSheetName.Text == "") return false;
-
-            var connectionString = String.Format("Provider=Microsoft.Jet.OLEDB.4.0;Data Source={0}; Extended Properties=\"Excel 8.0;HDR=Yes;\";", path);
-            var queryString = String.Format("Select * from [{0}$]", tbSheetName.Text);
-
-            try
-            {
-                var connection = new OleDbConnection(connectionString);
-                var dataAdapter = new OleDbDataAdapter(queryString, connection);
-                table = new DataTable();
-                dataAdapter.Fill(table);
-                dgvContent.DataSource = table;
-
-                for (int i = 0; i < table.Rows.Count; i++)
-                {
-                    dgvContent.Rows[i].HeaderCell.Value = (i + 1).ToString();
-                }
-
-                dgvContent.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
-
-                Text = "Парсер адресов, загружено: " + path;
-                return true;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message);
-                return false;
-            }
-        }
-
-        private void DoParse()
-        {
-            if (table == null) return;
-
-            const int columnIndex = 0;
-
-            int countUknown = 0;
-
-            DateTime startTime = DateTime.Now;
-
-            pbParse.Invoke(new Action(() => { pbParse.Maximum = table.Rows.Count; }));
-
-            for (int i = 0; i < table.Rows.Count; i++)
-            {
-                try
-                {
-                    string value = table.Rows[i][columnIndex].ToString();
-                    ParseResult r = parser.Parse(value);
-
-                    table.Rows[i][PARSEDNAME_FIELD] = r.address;
-                    table.Rows[i][IDTYPE_FIELD] = r.type.ToString();
-                    table.Rows[i][GUID_FIELD] = r.id;
-                    table.Rows[i][LAST_FINDED_OBJECT_FIELED] = r.lastFindedName;
-                }
-                catch (Exception ex)
-                {
-                    table.Rows[i][PARSEDNAME_FIELD] = ex.Message;
-                    countUknown++;
-                }
-
-                //progress call
-                TimeSpan timeRemaining = TimeSpan.FromTicks((long)(DateTime.Now.Subtract(startTime).Ticks * (table.Rows.Count - (i + 1)) / (float)(i + 1)));
-
-                pbParse.Invoke(new Action(() => { lblRemaingTime.Text = timeRemaining.ToString(); }));
-                pbParse.Invoke(new Action(() => { pbParse.Increment(1); }));
-                pbParse.Invoke(new Action(() => { lblProgress.Text = (i + 1).ToString() + "/" + table.Rows.Count; }));
-
-            }
-            dgvContent.Invoke(new Action(() => { dgvContent.DataSource = table; }));
-
-            pbParse.Invoke(new Action(() => { lblCountUknown.Text = "Кол-во неизвестных: " + countUknown; }));
-            MessageBox.Show("всё");
-        }
-
-        private void comboBox_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            var cb = sender as ComboBox;
-
-            var index = comboBoxes.IndexOf(cb);
-
-            if (cb.SelectedIndex > -1 && cb.SelectedIndex < AOGUID_dic[cb].objects.Count)
-            {
-                textBox1.Text = AOGUID_dic[cb].objects[cb.SelectedIndex].AOGUID;
-            }
-            else if (cb.SelectedIndex > AOGUID_dic[cb].objects.Count - 1
-                && cb.SelectedIndex < AOGUID_dic[cb].objects.Count + AOGUID_dic[cb].houses.Count)
-            {
-                textBox1.Text = AOGUID_dic[cb].houses[cb.SelectedIndex - AOGUID_dic[cb].objects.Count].HOUSEGUID;
-            }
-            else if (cb.SelectedIndex > AOGUID_dic[cb].objects.Count + AOGUID_dic[cb].houses.Count - 1
-                && cb.SelectedIndex < AOGUID_dic[cb].objects.Count + AOGUID_dic[cb].houses.Count + AOGUID_dic[cb].rooms.Count)
-            {
-                textBox1.Text = AOGUID_dic[cb].rooms[cb.SelectedIndex - AOGUID_dic[cb].objects.Count
-                    - AOGUID_dic[cb].houses.Count].ROOMGUID;
-            }
-
-
-        }
-        private void Find()
-        {
-            var guids = new Result();
-            watingQuery = true;
-            foreach (var item in parser.SelectAllObject(saveText, saveParentGuid, saveAOLEVEL))
-            {
-                bool alreadyFinded = false;
-
-                foreach (var okm in AOGUID_dic[saveCB].objects)
-                {
-                    if (okm.AOLEVEL == item.AOLEVEL) alreadyFinded = true;
-                }
-                if (!alreadyFinded)
-                {
-                    guids.objects.Add(item);
-                    saveCB.Invoke(new Action(() => { saveCB.Items.Add(item.FORMALNAME + " " + item.SHORTNAME); }));
-                }
-            }
-            if (saveAOLEVEL > 4 && saveAOLEVEL != 8)
-                foreach (var house in parser.SelectAllHouses(saveParentGuid, saveText))
-                {
-                    guids.houses.Add(house);
-                    saveCB.Invoke(new Action(() => { saveCB.Items.Add(house.ToString()); }));
-                }
-
-            if (saveAOLEVEL == 8)
-                foreach (var room in parser.SelectAllRoom(saveParentGuid, saveText))
-                {
-                    guids.rooms.Add(room);
-                    saveCB.Invoke(new Action(() => { saveCB.Items.Add("комната: " + room.FLATNUMBER); }));
-                }
-
-
-            AOGUID_dic[saveCB] = guids;
-
-            //todo
-            if (guids.objects?.Count == 0 && guids.houses?.Count == 0 && guids.rooms?.Count == 0)
-                lblLoading.Invoke(new Action(() => { lblLoading.Text = "-"; }));
-            else lblLoading.Invoke(new Action(() => { lblLoading.Text = "Найдено: " + saveCB.Items.Count; }));
-
-            saveCB.Invoke(new Action(() =>
-            {
-                if (saveCB.Items.Count > 0) saveCB.SelectedIndex = 0;
-            }));
-            watingQuery = false;
-        }
-
-        private void MainForm_Load(object sender, EventArgs e)
-        {
-
-            comboBoxes.Add(comboBox1);
-            comboBoxes.Add(comboBox2);
-            comboBoxes.Add(comboBox3);
-            comboBoxes.Add(comboBox4);
-            comboBoxes.Add(comboBox5);
-            comboBoxes.Add(comboBox6);
-
-            foreach (var item in comboBoxes)
-            {
-                AOGUID_dic.Add(item, new Result());
-            }
-        }
-
-        private void comboBox_KeyDown(object sender, KeyEventArgs e)
-        {
-            if (e.KeyCode == Keys.Enter)
-            {
-                if (watingQuery) return;
-                var cb = sender as ComboBox;
-
-                if (string.IsNullOrEmpty(cb.Text)) return;
-
-                saveCB = cb;
-                saveText = cb.Text;
-                int index = comboBoxes.IndexOf(cb);
-
-                saveParentGuid = null;
-                saveAOLEVEL = 0;
-                if (index > 0)
-                {
-                    var prev = comboBoxes[index - 1];
-                    if (prev.SelectedIndex == -1) return;
-                    if (prev.SelectedIndex > -1 && prev.SelectedIndex < AOGUID_dic[prev].objects.Count)
-                    {
-                        saveAOLEVEL = AOGUID_dic[prev].objects[prev.SelectedIndex].AOLEVEL;
-                        saveParentGuid = AOGUID_dic[prev].objects[prev.SelectedIndex].AOGUID;
-                    }
-
-                    else if (prev.SelectedIndex > AOGUID_dic[prev].objects.Count
-                        && prev.SelectedIndex < AOGUID_dic[prev].objects.Count + AOGUID_dic[prev].houses.Count)
-                    {
-                        saveParentGuid = AOGUID_dic[prev].houses[prev.SelectedIndex - AOGUID_dic[prev].objects.Count].HOUSEGUID;
-                    }
-                    else
-                    {
-                        int ind = prev.SelectedIndex - AOGUID_dic[prev].houses.Count - 1 - AOGUID_dic[prev].objects.Count - 1;
-                        saveParentGuid = AOGUID_dic[prev].rooms[ind].ROOMGUID;
-                    }
-                }
-
-                lblLoading.Text = "Загрузка...";
-                cb.Items.Clear();
-                for (int i = index + 1; i < comboBoxes.Count; i++)
-                {
-                    comboBoxes[i].Items.Clear();
-                    comboBoxes[i].Text = "";
-                }
-                Thread th = new Thread(Find);
-                th.Start();
-
-            }
-        }
-
-        private void btnNextEmpty_Click(object sender, EventArgs e)
-        {
-            if (table == null) return;
-            if (!string.IsNullOrEmpty(comboBox2.Text))
-            {
-                DialogResult dialogResult = MessageBox.Show("Вы точно хотите перейти к следующему?", "Предупреждение.", MessageBoxButtons.YesNo);
-                if (dialogResult == DialogResult.No) return;
-            }
-            dgvContent.Focus();
-
-            for (int i = dgvContent.FirstDisplayedScrollingRowIndex + 1; i < table.Rows.Count; i++)
-            {
-                var row = table.Rows[i];
-                object cell = null;
-                try
-                {
-                    cell = row[IDTYPE_FIELD];
-                }
-                catch
-                {
-                    MessageBox.Show("Эта таблица не имеет распарсенных данных. Проверьте названия столбцов.", "Ошибка");
-                    return;
-                }
-                if ((string.IsNullOrEmpty(cell.ToString()) || "Object" == cell.ToString()))
-                {
-                    dgvContent.ClearSelection();
-                    dgvContent.FirstDisplayedScrollingRowIndex = i;
-                    dgvContent.Rows[i].Selected = true;
-
-                    foreach (var c in comboBoxes)
-                    {
-                        c.Items.Clear();
-                        c.Text = "";
-                    }
-
-                    if (row[LAST_FINDED_OBJECT_FIELED].ToString() != "")
-                    {
-                        comboBox1.Text = row[LAST_FINDED_OBJECT_FIELED].ToString();
-                        comboBox1.Items.Add(row[LAST_FINDED_OBJECT_FIELED].ToString());
-                        AOGUID_dic[comboBox1].objects.Clear();
-                        AOGUID_dic[comboBox1].objects.Add(new ObjectKnownMargins()
-                        {
-                            AOGUID = row[GUID_FIELD].ToString(),
-                            FORMALNAME = row[LAST_FINDED_OBJECT_FIELED].ToString()
-                        });
-                        comboBox1.SelectedIndex = 0;
-                        comboBox2.Focus();
-                    }
-
-                    break;
-                }
-
-            }
-
-        }
-
-        private void btnWrite_Click(object sender, EventArgs e)
-        {
-            if (comboBox1.Text == "") return;
-
-            try
-            {
-                table.Rows[0][GUID_FIELD].ToString();
-            }
-            catch
-            {
-                MessageBox.Show("Вы пытаетесь записать в таблицу, в которой нет распарсенных данных.");
-                return;
-            }
-
-            int lastId = 0;
-            for (int i = 0; i < comboBoxes.Count; i++)
-            {
-                if (comboBoxes[i].SelectedIndex > -1) lastId = i;
-            }
-            var cb = comboBoxes[lastId];
-            int rowIndex;
-
-            try
-            {
-                rowIndex = dgvContent.SelectedRows[0].Index;
-            }
-            catch
-            {
-                MessageBox.Show("Чтобы записать, нужно выделить всю строку.");
-                return;
-            }
-
-            if (cb.SelectedIndex > -1 && cb.SelectedIndex < AOGUID_dic[cb].objects.Count)
-            {
-                //object
-                table.Rows[rowIndex][GUID_FIELD] = AOGUID_dic[cb].objects[cb.SelectedIndex].AOGUID;
-                table.Rows[rowIndex][IDTYPE_FIELD] = IdType.Object;
-            }
-
-            else if (cb.SelectedIndex >= AOGUID_dic[cb].objects.Count
-                 && cb.SelectedIndex < AOGUID_dic[cb].objects.Count + AOGUID_dic[cb].houses.Count)
-            {
-                //house
-                table.Rows[rowIndex][GUID_FIELD] = AOGUID_dic[cb].houses[cb.SelectedIndex - AOGUID_dic[cb].objects.Count].HOUSEGUID;
-                table.Rows[rowIndex][IDTYPE_FIELD] = IdType.House;
-            }
-            else if (cb.SelectedIndex > -1)
-            {
-                //room
-                int ind = cb.SelectedIndex - AOGUID_dic[cb].houses.Count - 1 - AOGUID_dic[cb].objects.Count - 1;
-
-                table.Rows[rowIndex][GUID_FIELD] = AOGUID_dic[cb].rooms[ind].ROOMGUID;
-                table.Rows[rowIndex][IDTYPE_FIELD] = IdType.Room;
-            }
-
-            table.Rows[rowIndex][PARSEDNAME_FIELD] = "Исправлено.";
-
-            int last = 0;
-            for (int i = 0; i < comboBoxes.Count; i++)
-            {
-                if (comboBoxes[i].SelectedIndex > -1) last = i;
-            }
-            table.Rows[rowIndex][LAST_FINDED_OBJECT_FIELED] = comboBoxes[last].Text;
-
-            foreach (var c in comboBoxes)
-            {
-                c.Items.Clear();
-                c.Text = "";
-            }
-            lblLastWritedRow.Text = "Последняя записаная строка: " + (rowIndex + 1).ToString();
-        }
-
-        private void btnLoadFromFile_Click(object sender, EventArgs e)
-        {
-            LoadFromFile();
-        }
-
-        private bool LoadFromFile()
-        {
-            var odf = new OpenFileDialog
-            {
-                Filter = "Excel Files|*.xlsx;*.xls"
-            };
-
-
-            if (odf.ShowDialog() == DialogResult.OK)
-            {
-                path = odf.FileName;
-                if (!LoadToGridView()) return false;
-
-                foreach (DataGridViewColumn column in dgvContent.Columns)
-                {
-                    column.SortMode = DataGridViewColumnSortMode.NotSortable;
-                }
-                return true;
-            }
-            return false;
-        }
-
-        private void btnSaveAs_Click(object sender, EventArgs e)
-        {
-            if (dgvContent.Columns.Count == 0) return;
-            SaveFileDialog sfd = new SaveFileDialog
-            {
-                Filter = "Excel Documents (*.xls)|*.xls",
-                FileName = "Parsed_Addresses_Export.xls"
-            };
-            if (sfd.ShowDialog() == DialogResult.OK)
-            {
-                Save(sfd.FileName);
-                lastSavePath = sfd.FileName;
-                btnSave.Enabled = true;
-            }
-        }
-
-        private void Save(string path)
-        {
-            dgvContent.MultiSelect = true;
+            dgv.MultiSelect = true;
             // Copy DataGridView results to clipboard
-            CopyAlltoClipboard();
+            dgv.SelectAll();
+            DataObject dataObj = dgvContent.GetClipboardContent();
+            if (dataObj != null)
+                Clipboard.SetDataObject(dataObj);
 
             object misValue = System.Reflection.Missing.Value;
             Excel.Application xlexcel = new Excel.Application
@@ -492,12 +84,12 @@ namespace FiasParserGUI
                     "Y:Y",
                     "Z:Z"
             };
-            Excel.Range rng = xlWorkSheet.get_Range(rangeColumnsNames[table.Columns.Count]).Cells;
+            Excel.Range rng = xlWorkSheet.get_Range(rangeColumnsNames[dgv.Columns.Count]).Cells;
             rng.NumberFormat = "@";
 
-            for (int i = 0; i < dgvContent.Columns.Count; i++)
+            for (int i = 0; i < dgv.Columns.Count; i++)
             {
-                var column = dgvContent.Columns[i];
+                var column = dgv.Columns[i];
 
                 xlWorkSheet.Cells[1, i + 2] = column.HeaderCell.Value.ToString();
             }
@@ -525,16 +117,8 @@ namespace FiasParserGUI
 
             // Clear Clipboard and DataGridView selection
             Clipboard.Clear();
-            dgvContent.ClearSelection();
-            dgvContent.MultiSelect = false;
-        }
-
-        private void CopyAlltoClipboard()
-        {
-            dgvContent.SelectAll();
-            DataObject dataObj = dgvContent.GetClipboardContent();
-            if (dataObj != null)
-                Clipboard.SetDataObject(dataObj);
+            dgv.ClearSelection();
+            dgv.MultiSelect = false;
         }
 
         private void ReleaseObject(object obj)
@@ -555,9 +139,203 @@ namespace FiasParserGUI
             }
         }
 
-        private void btnSave_Click(object sender, EventArgs e)
+        private void miOpen_Click(object sender, EventArgs e)
         {
-            if (!string.IsNullOrEmpty(lastSavePath)) Save(lastSavePath);
+            if (fileOpened && !TryCloseFile()) return;
+
+            OpenFileDialog ofd = new OpenFileDialog
+            {
+                DefaultExt = "*.xls;*.xlsx",
+                Filter = "Excel 2003(*.xls)|*.xls|Excel 2007(*.xlsx)|*.xlsx",
+                Title = "Выберите документ для загрузки данных"
+            };
+
+            if (ofd.ShowDialog() == DialogResult.OK)
+            {
+                try
+                {
+                    String constr = "Provider=Microsoft.ACE.OLEDB.12.0;Data Source=" +
+                                    ofd.FileName +
+                                    ";Extended Properties='Excel 12.0 XML;HDR=YES;IMEX=1';";
+
+                    System.Data.OleDb.OleDbConnection con =
+                        new System.Data.OleDb.OleDbConnection(constr);
+                    con.Open();
+
+                    var inputForm = new InputForm("Введите название листа.");
+                    inputForm.ShowDialog();
+
+                    string select = String.Format("SELECT * FROM [{0}$]", inputForm.InputText);
+
+                    System.Data.OleDb.OleDbDataAdapter ad =
+                        new System.Data.OleDb.OleDbDataAdapter(select, con);
+
+                    DataTable dt = new DataTable();
+                    ad.Fill(dt);
+
+                    dgvContent.DataSource = dt;
+
+                    for (int i = 0; i < dgvContent.Rows.Count; i++)
+                    {
+                        dgvContent.Rows[i].HeaderCell.Value = (i + 1).ToString();
+                    }
+
+                    con.Close();
+
+                    fileOpened = true;
+                    openedFilePath = ofd.FileName;
+
+                    SwitchGUI(true);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message, "Произошла ошибка при открытии файла.", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+        }
+
+
+        public static bool IsHasEmptyField(DataGridView dgv, int rowIndex)
+        {
+            if (string.IsNullOrEmpty(dgv[DISTRICT_FIELD, rowIndex].ToString())
+                || string.IsNullOrEmpty(dgv[REGION_FIELD, rowIndex].ToString())
+                  || string.IsNullOrEmpty(dgv[CITY_FIELD, rowIndex].ToString())
+                  || string.IsNullOrEmpty(dgv[STREET_FIELD, rowIndex].ToString())
+                  || string.IsNullOrEmpty(dgv[HOUSE_FIELD, rowIndex].ToString())
+                  || string.IsNullOrEmpty(dgv[STATUS_FIELD, rowIndex].ToString())) return true;
+            return false;
+        }
+
+        /// <summary>
+        /// Закрывает открытый файл программы.
+        /// </summary>
+        /// <returns>Возвращает true, если файл был закрыт, иначе false.</returns>
+        private bool TryCloseFile()
+        {
+            var cautionMessage = "Имеются несохранённые изменения!\nВы точно хотите выйти?";
+            if (hasUnsavedChanges &&
+                MessageBox.Show(cautionMessage, "Предупреждение", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning)
+                == DialogResult.Yes)
+            {
+
+                dgvContent.Columns.Clear();
+
+                ClearSideBar();
+
+                SwitchGUI(false);
+
+                fileOpened = false;
+
+                return true;
+            }
+            return false;
+        }
+
+        private void ClearSideBar()
+        {
+            tbDistrict.Clear();
+            tbRegion.Clear();
+            tbCity.Clear();
+            tbStreet.Clear();
+            tbHouse.Clear();
+            lblStatus.Text = "Статус: ";
+            lblRowIndex.Text = "Номер строки: ";
+        }
+
+        private void SwitchGUI(bool fileOpened)
+        {
+            dgvContent.Enabled = fileOpened;
+
+            if (fileOpened)
+            {
+                if (CheckTableForParsedData(dgvContent))
+                {
+                    miSendToDB.Enabled = true;
+                }
+                else
+                {
+                    miSendToDB.Enabled = false;
+                }
+            }
+            else
+            {
+                pSide.Enabled = false;
+            }
+
+            miProccessing.Enabled = fileOpened;
+            miClose.Enabled = fileOpened;
+            miSave.Enabled = fileOpened;
+            miSaveAs.Enabled = fileOpened;
+        }
+
+        private bool CheckTableForParsedData(DataGridView dgv)
+        {
+            var c = dgv.Columns;
+            if (c.Contains(DISTRICT_FIELD) && c.Contains(REGION_FIELD) && c.Contains(CITY_FIELD) && c.Contains(STREET_FIELD)
+                && c.Contains(HOUSE_FIELD) && c.Contains(STATUS_FIELD)) return true;
+            return false;
+        }
+
+        private void miClose_Click(object sender, EventArgs e) => TryCloseFile();
+
+        private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            if (!TryCloseFile()) e.Cancel = true;
+        }
+
+        private void miSaveAs_Click(object sender, EventArgs e)
+        {
+            var sfd = new SaveFileDialog();
+            if (sfd.ShowDialog() == DialogResult.OK)
+            {
+                Save(dgvContent, sfd.FileName);
+                openedFilePath = sfd.FileName;
+            }
+        }
+
+        private void miSave_Click(object sender, EventArgs e)
+        {
+            Save(dgvContent, openedFilePath);
+        }
+
+        private void miFiasParse_Click(object sender, EventArgs e)
+        {
+            var parseForm = new FiasParserForm(parser, dgvContent);
+            parseForm.ShowDialog();
+
+            if (parseForm.Parsed)
+            {
+                hasUnsavedChanges = true;
+                SwitchGUI(true);
+            }
+            parseForm.Dispose();
+        }
+
+        private void dgvContent_SelectionChanged(object sender, EventArgs e)
+        {
+            
+
+            if (CheckTableForParsedData(dgvContent) && dgvContent.SelectedCells.Count > 0)
+            {
+                var rowIndex = dgvContent.SelectedCells[0].RowIndex;
+                lblRowIndex.Text = "Номер строки: " + (rowIndex + 1).ToString();
+                lblStatus.Text = "Статус: " + dgvContent[STATUS_FIELD, rowIndex].Value.ToString();
+
+                tbDistrict.Text = dgvContent[DISTRICT_FIELD, rowIndex].Value.ToString();
+                tbRegion.Text = dgvContent[REGION_FIELD, rowIndex].Value.ToString();
+                tbCity.Text = dgvContent[CITY_FIELD, rowIndex].Value.ToString();
+                tbStreet.Text = dgvContent[STREET_FIELD, rowIndex].Value.ToString();
+                tbHouse.Text = dgvContent[HOUSE_FIELD, rowIndex].Value.ToString();
+
+                //TODO ЗДЕСЬ НУЖНО сразу переходить на пустое данное, если такое есть.
+
+                pSide.Enabled = true;
+            }
+            else
+            {
+                ClearSideBar();
+                pSide.Enabled = false;
+            }
         }
     }
 }
