@@ -24,14 +24,6 @@ namespace AddressSplitterLib
         /// <param name="source"></param>
         public List<Variant> Parse(string source)
         {
-            
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine("-----------------------");
-            
-            Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine("Исходная: {0}", source);
-            Console.ResetColor();
-
             var obviousObjects = ParseObvious(ref source).objects;
 
             var buildingAndRoomVariants = truncator.TruncBuildingAndRoomNum(ref source);
@@ -44,29 +36,9 @@ namespace AddressSplitterLib
 
             foreach (var item in res)
             {
-                Console.ForegroundColor = ConsoleColor.White;
-                Console.WriteLine();           
-                Console.WriteLine("Вариант:");
-                Console.ResetColor();
-
                 item.AddRange(obviousObjects);
-
                 item.Sort();
-
-                foreach (var obj in item)
-                {
-                    Console.Write(obj.Name + "-->");
-                }
-                Console.Write("Вероятность правильности: {0}",item.GetProbability());
-                Console.WriteLine();
-                Console.ForegroundColor = ConsoleColor.White;
-                Console.WriteLine();
-                Console.ResetColor();
             }
-
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine("-----------------------");
-            Console.ResetColor();
 
             return res;
         }

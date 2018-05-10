@@ -41,9 +41,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Exceptions\AddressNotFound.cs" />
-    <Compile Include="Exceptions\ManyObjectsFindedException.cs" />
-    <Compile Include="Exceptions\NoOneGoodVariantException.cs" />
+    <Compile Include="Exceptions\BadLoginException.cs" />
     <Compile Include="FiasClasses.designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>

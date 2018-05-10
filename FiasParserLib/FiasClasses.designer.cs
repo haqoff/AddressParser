@@ -47,8 +47,7 @@ namespace FiasParserLib
     partial void DeleteDistrict(District instance);
     #endregion
 		
-
-		
+	
 		public FiasClassesDataContext(string connection) : 
 				base(connection, mappingSource)
 		{

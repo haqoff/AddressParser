@@ -1,6 +1,7 @@
-﻿using FiasParserLib;
-using System;
+﻿using System;
 using System.Windows.Forms;
+using FiasParserGUI.Exceptions;
+using FiasParserLib;
 
 namespace FiasParserGUI
 {
@@ -26,7 +27,7 @@ namespace FiasParserGUI
                 if (main.ShowDialog() != DialogResult.OK)
                     Close();
             }
-            catch
+            catch(BadLoginException)
             {
                 MessageBox.Show("Не удалось подключиться к БД. Проверьте данные для подключения.");
             }

@@ -40,6 +40,7 @@
             this.miSendToDB = new System.Windows.Forms.ToolStripMenuItem();
             this.miSettings = new System.Windows.Forms.ToolStripMenuItem();
             this.gbAddress = new System.Windows.Forms.GroupBox();
+            this.lblRowIndex = new System.Windows.Forms.Label();
             this.lblStatus = new System.Windows.Forms.Label();
             this.tbHouse = new System.Windows.Forms.TextBox();
             this.lblHouse = new System.Windows.Forms.Label();
@@ -53,7 +54,6 @@
             this.lblDistrict = new System.Windows.Forms.Label();
             this.pSide = new System.Windows.Forms.Panel();
             this.button1 = new System.Windows.Forms.Button();
-            this.lblRowIndex = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.dgvContent)).BeginInit();
             this.msBar.SuspendLayout();
             this.gbAddress.SuspendLayout();
@@ -63,11 +63,10 @@
             // dgvContent
             // 
             this.dgvContent.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            this.dgvContent.Location = new System.Drawing.Point(16, 32);
-            this.dgvContent.Margin = new System.Windows.Forms.Padding(4);
+            this.dgvContent.Location = new System.Drawing.Point(12, 26);
             this.dgvContent.MultiSelect = false;
             this.dgvContent.Name = "dgvContent";
-            this.dgvContent.Size = new System.Drawing.Size(1327, 564);
+            this.dgvContent.Size = new System.Drawing.Size(995, 458);
             this.dgvContent.TabIndex = 1;
             this.dgvContent.SelectionChanged += new System.EventHandler(this.dgvContent_SelectionChanged);
             // 
@@ -80,7 +79,8 @@
             this.miSettings});
             this.msBar.Location = new System.Drawing.Point(0, 0);
             this.msBar.Name = "msBar";
-            this.msBar.Size = new System.Drawing.Size(1658, 28);
+            this.msBar.Padding = new System.Windows.Forms.Padding(4, 2, 0, 2);
+            this.msBar.Size = new System.Drawing.Size(1247, 24);
             this.msBar.TabIndex = 7;
             this.msBar.Text = "menuStrip1";
             // 
@@ -92,13 +92,13 @@
             this.miSave,
             this.miSaveAs});
             this.miFile.Name = "miFile";
-            this.miFile.Size = new System.Drawing.Size(57, 24);
+            this.miFile.Size = new System.Drawing.Size(48, 20);
             this.miFile.Text = "Файл";
             // 
             // miOpen
             // 
             this.miOpen.Name = "miOpen";
-            this.miOpen.Size = new System.Drawing.Size(216, 26);
+            this.miOpen.Size = new System.Drawing.Size(153, 22);
             this.miOpen.Text = "Открыть";
             this.miOpen.Click += new System.EventHandler(this.miOpen_Click);
             // 
@@ -106,7 +106,7 @@
             // 
             this.miClose.Enabled = false;
             this.miClose.Name = "miClose";
-            this.miClose.Size = new System.Drawing.Size(216, 26);
+            this.miClose.Size = new System.Drawing.Size(153, 22);
             this.miClose.Text = "Закрыть";
             this.miClose.Click += new System.EventHandler(this.miClose_Click);
             // 
@@ -114,7 +114,7 @@
             // 
             this.miSave.Enabled = false;
             this.miSave.Name = "miSave";
-            this.miSave.Size = new System.Drawing.Size(216, 26);
+            this.miSave.Size = new System.Drawing.Size(153, 22);
             this.miSave.Text = "Сохранить";
             this.miSave.Click += new System.EventHandler(this.miSave_Click);
             // 
@@ -122,7 +122,7 @@
             // 
             this.miSaveAs.Enabled = false;
             this.miSaveAs.Name = "miSaveAs";
-            this.miSaveAs.Size = new System.Drawing.Size(216, 26);
+            this.miSaveAs.Size = new System.Drawing.Size(153, 22);
             this.miSaveAs.Text = "Сохранить как";
             this.miSaveAs.Click += new System.EventHandler(this.miSaveAs_Click);
             // 
@@ -133,26 +133,26 @@
             this.miSendToDB});
             this.miProccessing.Enabled = false;
             this.miProccessing.Name = "miProccessing";
-            this.miProccessing.Size = new System.Drawing.Size(97, 24);
+            this.miProccessing.Size = new System.Drawing.Size(79, 20);
             this.miProccessing.Text = "Обработка";
             // 
             // miFiasParse
             // 
             this.miFiasParse.Name = "miFiasParse";
-            this.miFiasParse.Size = new System.Drawing.Size(218, 26);
+            this.miFiasParse.Size = new System.Drawing.Size(180, 22);
             this.miFiasParse.Text = "Распарсить по FIAS";
             this.miFiasParse.Click += new System.EventHandler(this.miFiasParse_Click);
             // 
             // miSendToDB
             // 
             this.miSendToDB.Name = "miSendToDB";
-            this.miSendToDB.Size = new System.Drawing.Size(218, 26);
+            this.miSendToDB.Size = new System.Drawing.Size(180, 22);
             this.miSendToDB.Text = "Отправить в БД";
             // 
             // miSettings
             // 
             this.miSettings.Name = "miSettings";
-            this.miSettings.Size = new System.Drawing.Size(96, 24);
+            this.miSettings.Size = new System.Drawing.Size(79, 20);
             this.miSettings.Text = "Настройки";
             // 
             // gbAddress
@@ -169,104 +169,127 @@
             this.gbAddress.Controls.Add(this.lblRegion);
             this.gbAddress.Controls.Add(this.tbDistrict);
             this.gbAddress.Controls.Add(this.lblDistrict);
-            this.gbAddress.Location = new System.Drawing.Point(1353, 31);
+            this.gbAddress.Location = new System.Drawing.Point(1015, 25);
+            this.gbAddress.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.gbAddress.Name = "gbAddress";
-            this.gbAddress.Size = new System.Drawing.Size(301, 354);
+            this.gbAddress.Padding = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.gbAddress.Size = new System.Drawing.Size(226, 288);
             this.gbAddress.TabIndex = 11;
             this.gbAddress.TabStop = false;
             this.gbAddress.Text = "Адрес";
             // 
+            // lblRowIndex
+            // 
+            this.lblRowIndex.AutoSize = true;
+            this.lblRowIndex.Location = new System.Drawing.Point(0, 35);
+            this.lblRowIndex.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
+            this.lblRowIndex.Name = "lblRowIndex";
+            this.lblRowIndex.Size = new System.Drawing.Size(82, 13);
+            this.lblRowIndex.TabIndex = 11;
+            this.lblRowIndex.Text = "Номер строки:";
+            // 
             // lblStatus
             // 
             this.lblStatus.AutoSize = true;
-            this.lblStatus.Location = new System.Drawing.Point(0, 70);
+            this.lblStatus.Location = new System.Drawing.Point(0, 57);
+            this.lblStatus.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.lblStatus.Name = "lblStatus";
-            this.lblStatus.Size = new System.Drawing.Size(57, 17);
+            this.lblStatus.Size = new System.Drawing.Size(44, 13);
             this.lblStatus.TabIndex = 10;
             this.lblStatus.Text = "Статус:";
             // 
             // tbHouse
             // 
-            this.tbHouse.Location = new System.Drawing.Point(3, 321);
+            this.tbHouse.Location = new System.Drawing.Point(2, 261);
+            this.tbHouse.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.tbHouse.Name = "tbHouse";
-            this.tbHouse.Size = new System.Drawing.Size(292, 22);
+            this.tbHouse.Size = new System.Drawing.Size(220, 20);
             this.tbHouse.TabIndex = 9;
             // 
             // lblHouse
             // 
             this.lblHouse.AutoSize = true;
             this.lblHouse.ForeColor = System.Drawing.SystemColors.Highlight;
-            this.lblHouse.Location = new System.Drawing.Point(0, 301);
+            this.lblHouse.Location = new System.Drawing.Point(0, 245);
+            this.lblHouse.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.lblHouse.Name = "lblHouse";
-            this.lblHouse.Size = new System.Drawing.Size(40, 17);
+            this.lblHouse.Size = new System.Drawing.Size(33, 13);
             this.lblHouse.TabIndex = 8;
             this.lblHouse.Text = "Дом:";
             // 
             // tbStreet
             // 
-            this.tbStreet.Location = new System.Drawing.Point(3, 271);
+            this.tbStreet.Location = new System.Drawing.Point(2, 220);
+            this.tbStreet.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.tbStreet.Name = "tbStreet";
-            this.tbStreet.Size = new System.Drawing.Size(292, 22);
+            this.tbStreet.Size = new System.Drawing.Size(220, 20);
             this.tbStreet.TabIndex = 7;
             // 
             // lblStreet
             // 
             this.lblStreet.AutoSize = true;
             this.lblStreet.ForeColor = System.Drawing.SystemColors.Highlight;
-            this.lblStreet.Location = new System.Drawing.Point(0, 251);
+            this.lblStreet.Location = new System.Drawing.Point(0, 204);
+            this.lblStreet.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.lblStreet.Name = "lblStreet";
-            this.lblStreet.Size = new System.Drawing.Size(53, 17);
+            this.lblStreet.Size = new System.Drawing.Size(42, 13);
             this.lblStreet.TabIndex = 6;
             this.lblStreet.Text = "Улица:";
             // 
             // tbCity
             // 
-            this.tbCity.Location = new System.Drawing.Point(3, 221);
+            this.tbCity.Location = new System.Drawing.Point(2, 180);
+            this.tbCity.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.tbCity.Name = "tbCity";
-            this.tbCity.Size = new System.Drawing.Size(292, 22);
+            this.tbCity.Size = new System.Drawing.Size(220, 20);
             this.tbCity.TabIndex = 5;
             // 
             // lblCity
             // 
             this.lblCity.AutoSize = true;
             this.lblCity.ForeColor = System.Drawing.SystemColors.Highlight;
-            this.lblCity.Location = new System.Drawing.Point(0, 201);
+            this.lblCity.Location = new System.Drawing.Point(0, 163);
+            this.lblCity.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.lblCity.Name = "lblCity";
-            this.lblCity.Size = new System.Drawing.Size(136, 17);
+            this.lblCity.Size = new System.Drawing.Size(105, 13);
             this.lblCity.TabIndex = 4;
             this.lblCity.Text = "Населённый пункт:";
             // 
             // tbRegion
             // 
-            this.tbRegion.Location = new System.Drawing.Point(3, 169);
+            this.tbRegion.Location = new System.Drawing.Point(2, 137);
+            this.tbRegion.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.tbRegion.Name = "tbRegion";
-            this.tbRegion.Size = new System.Drawing.Size(292, 22);
+            this.tbRegion.Size = new System.Drawing.Size(220, 20);
             this.tbRegion.TabIndex = 3;
             // 
             // lblRegion
             // 
             this.lblRegion.AutoSize = true;
             this.lblRegion.ForeColor = System.Drawing.SystemColors.Highlight;
-            this.lblRegion.Location = new System.Drawing.Point(0, 149);
+            this.lblRegion.Location = new System.Drawing.Point(0, 121);
+            this.lblRegion.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.lblRegion.Name = "lblRegion";
-            this.lblRegion.Size = new System.Drawing.Size(68, 17);
+            this.lblRegion.Size = new System.Drawing.Size(53, 13);
             this.lblRegion.TabIndex = 2;
             this.lblRegion.Text = "Область:";
             // 
             // tbDistrict
             // 
-            this.tbDistrict.Location = new System.Drawing.Point(3, 117);
+            this.tbDistrict.Location = new System.Drawing.Point(2, 95);
+            this.tbDistrict.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.tbDistrict.Name = "tbDistrict";
-            this.tbDistrict.Size = new System.Drawing.Size(292, 22);
+            this.tbDistrict.Size = new System.Drawing.Size(220, 20);
             this.tbDistrict.TabIndex = 1;
             // 
             // lblDistrict
             // 
             this.lblDistrict.AutoSize = true;
             this.lblDistrict.ForeColor = System.Drawing.SystemColors.Highlight;
-            this.lblDistrict.Location = new System.Drawing.Point(0, 97);
+            this.lblDistrict.Location = new System.Drawing.Point(0, 79);
+            this.lblDistrict.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.lblDistrict.Name = "lblDistrict";
-            this.lblDistrict.Size = new System.Drawing.Size(50, 17);
+            this.lblDistrict.Size = new System.Drawing.Size(40, 13);
             this.lblDistrict.TabIndex = 0;
             this.lblDistrict.Text = "Округ:";
             // 
@@ -274,41 +297,35 @@
             // 
             this.pSide.Controls.Add(this.button1);
             this.pSide.Enabled = false;
-            this.pSide.Location = new System.Drawing.Point(1350, 32);
+            this.pSide.Location = new System.Drawing.Point(1012, 26);
+            this.pSide.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.pSide.Name = "pSide";
-            this.pSide.Size = new System.Drawing.Size(314, 564);
+            this.pSide.Size = new System.Drawing.Size(236, 458);
             this.pSide.TabIndex = 13;
             // 
             // button1
             // 
-            this.button1.Location = new System.Drawing.Point(85, 529);
+            this.button1.Location = new System.Drawing.Point(64, 430);
+            this.button1.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(142, 28);
+            this.button1.Size = new System.Drawing.Size(106, 23);
             this.button1.TabIndex = 0;
             this.button1.Text = "Перейти к след.";
             this.button1.UseVisualStyleBackColor = true;
             // 
-            // lblRowIndex
-            // 
-            this.lblRowIndex.AutoSize = true;
-            this.lblRowIndex.Location = new System.Drawing.Point(0, 43);
-            this.lblRowIndex.Name = "lblRowIndex";
-            this.lblRowIndex.Size = new System.Drawing.Size(104, 17);
-            this.lblRowIndex.TabIndex = 11;
-            this.lblRowIndex.Text = "Номер строки:";
-            // 
             // MainForm
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1658, 601);
+            this.ClientSize = new System.Drawing.Size(1247, 488);
             this.Controls.Add(this.gbAddress);
             this.Controls.Add(this.pSide);
             this.Controls.Add(this.dgvContent);
             this.Controls.Add(this.msBar);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.MainMenuStrip = this.msBar;
-            this.Margin = new System.Windows.Forms.Padding(4);
             this.Name = "MainForm";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Парсер адресов";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_FormClosing);
             ((System.ComponentModel.ISupportInitialize)(this.dgvContent)).EndInit();

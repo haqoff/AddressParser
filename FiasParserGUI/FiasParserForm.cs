@@ -1,8 +1,8 @@
-﻿using FiasParserLib;
-using System;
+﻿using System;
 using System.Text;
 using System.Threading;
 using System.Windows.Forms;
+using FiasParserLib;
 
 namespace FiasParserGUI
 {
@@ -22,7 +22,7 @@ namespace FiasParserGUI
 
             foreach (DataGridViewColumn column in dgv.Columns)
             {
-                cbSourceColumn.Items.Add(column);
+                cbSourceColumn.Items.Add(column.Name);
             }
 
             SwitchGUI(true);
@@ -30,13 +30,16 @@ namespace FiasParserGUI
 
         private void SwitchGUI(bool settingsEnable)
         {
-            pSettings.Enabled = settingsEnable;
-            pProgress.Enabled = !settingsEnable;
+            pSettings.InvokeIfRequired(() => { pSettings.Enabled = settingsEnable; });
+            pProgress.InvokeIfRequired(() => { pProgress.Enabled = !settingsEnable; });
 
-            lblProgress.Visible = !settingsEnable;
-            lblRemained.Visible = !settingsEnable;
+            lblProgress.InvokeIfRequired(() => { lblProgress.Enabled = !settingsEnable; });
+            lblRemained.InvokeIfRequired(() => { lblRemained.Enabled = !settingsEnable; });
 
-            btnParse.Enabled = settingsEnable;
+            lblProgress.InvokeIfRequired(() => { lblProgress.Visible = !settingsEnable; });
+            lblRemained.InvokeIfRequired(() => { lblRemained.Visible = !settingsEnable; });
+
+            btnParse.InvokeIfRequired(() => { btnParse.Enabled = settingsEnable; });
         }
 
         private void btnAdd_Click(object sender, EventArgs e)
@@ -87,91 +90,115 @@ namespace FiasParserGUI
         {
             var sb = new StringBuilder();
             int countToFix = 0;
-            var column = cbSourceColumn.SelectedItem as DataGridViewColumn;
+            DataGridViewColumn column = null;
 
-            pbProgress.Invoke((MethodInvoker)(() => pbProgress.Maximum = dgv.Rows.Count));
-
-            DateTime startTime = DateTime.Now;
-            for (int i = 0; i < dgv.Rows.Count; i++)
+            try
             {
-                var cell = dgv[column.Index, i];
-                var value = cell.Value.ToString();
+                dgv.Invoke((MethodInvoker)(() => column = dgv.Columns[cbSourceColumn.SelectedItem.ToString()]));
 
-                lblCurrentAddress.Invoke((MethodInvoker)(() => lblCurrentAddress.Text = value));
+                pbProgress.Invoke((MethodInvoker)(() => pbProgress.Maximum = dgv.Rows.Count));
 
-                foreach (Replacement r in lbReplace.Items)
+                DateTime startTime = DateTime.Now;
+                for (int i = 0; i < dgv.Rows.Count; i++)
                 {
-                    value = value.Replace(r.source, r.replace);
-                }
+                    var cell = dgv[column.Index, i];
+                    string value = cell.Value?.ToString();
 
-                var parsed = parser.Parse(value);
+                    if (string.IsNullOrWhiteSpace(value)) continue;
 
-                if (parsed.Count > 0)
-                {
-                    var lastNode = parsed[0];
+                    lblCurrentAddress.Invoke((MethodInvoker)(() => lblCurrentAddress.Text = value));
 
-                    while (lastNode != null)
+                    foreach (Replacement r in lbReplace.Items)
                     {
-                        sb.Clear();
-                        if (lastNode.Type == TableType.Object)
+                        value = value.Replace(r.source, r.replace);
+                    }
+
+                    var parsed = parser.Parse(value);
+
+                    if (parsed.Count > 0)
+                    {
+                        var lastNode = parsed[0];
+
+                        while (lastNode != null)
                         {
-                            sb.Append(lastNode.ShortNameType);
-                            sb.Append(" ");
+                            sb.Clear();
+                            if (lastNode.Type == TableType.Object)
+                            {
+                                sb.Append(lastNode.ShortNameType);
+                                sb.Append(" ");
+                            }
+                            sb.Append(lastNode.Name);
+                            var name = sb.ToString();
+
+                            //регион
+                            if (lastNode.AOLevel > 0 && lastNode.AOLevel < 3) dgv[MainForm.REGION_FIELD, i].Value = name;
+                            //город
+                            else if (lastNode.AOLevel == 4 || lastNode.AOLevel == 6) dgv[MainForm.CITY_FIELD, i].Value = name;
+                            //улица
+                            else if (lastNode.AOLevel == 7 || lastNode.AOLevel == 91) dgv[MainForm.STREET_FIELD, i].Value = name;
+                            //дом
+                            else if (lastNode.Type == TableType.House) dgv[MainForm.HOUSE_FIELD, i].Value = name;
+
+                            lastNode = lastNode.Parent;
                         }
-                        sb.Append(lastNode.Name);
-                        var name = sb.ToString();
 
-                        //регион
-                        if (lastNode.AOLevel > 0 && lastNode.AOLevel < 3) dgv[MainForm.REGION_FIELD, i].Value = name;
-                        //город
-                        else if (lastNode.AOLevel == 4 || lastNode.AOLevel == 6) dgv[MainForm.CITY_FIELD, i].Value = name;
-                        //улица
-                        else if (lastNode.AOLevel == 7 || lastNode.AOLevel == 91) dgv[MainForm.STREET_FIELD, i].Value = name;
-                        //дом
-                        else if (lastNode.Type == TableType.House) dgv[MainForm.HOUSE_FIELD, i].Value = name;
+                        if (!string.IsNullOrEmpty(dgv[MainForm.REGION_FIELD, i].Value?.ToString()))
+                        {
+                            dgv[MainForm.DISTRICT_FIELD, i].Value = parser.GetDistrictByRegion(dgv[MainForm.REGION_FIELD, i].Value.ToString());
+                        }
 
-                        lastNode = lastNode.Parent;
+                        if (!string.IsNullOrEmpty(dgv[MainForm.REGION_FIELD, i].Value?.ToString())
+                            && !string.IsNullOrEmpty(dgv[MainForm.STREET_FIELD, i].Value?.ToString())
+                            && string.IsNullOrEmpty(dgv[MainForm.CITY_FIELD, i].Value?.ToString()))
+                        {
+                            dgv[MainForm.CITY_FIELD, i].Value = dgv[MainForm.REGION_FIELD, i].Value;
+                        }
                     }
 
-                    if (!string.IsNullOrEmpty(dgv[MainForm.REGION_FIELD, i].Value.ToString()))
+                    //Progress
+                    ///lblProgress
+                    sb.Clear();
+                    sb.Append(i + 1);
+                    sb.Append("/");
+                    sb.Append(dgv.Rows.Count);
+
+                    lblProgress.Invoke((MethodInvoker)(() => lblProgress.Text = sb.ToString()));
+
+                    ///lblRemained
+                    TimeSpan timeRemained = TimeSpan.FromTicks(DateTime.Now.Subtract(startTime).Ticks *
+                        (dgv.Rows.Count - (i + 1)) / (i + 1));
+                    lblRemained.Invoke((MethodInvoker)(() => lblRemained.Text = "Осталось: " + timeRemained.ToString()));
+
+                    ///pbProgress
+                    pbProgress.Invoke((MethodInvoker)(() => pbProgress.Increment(1)));
+
+                    ///StatusField, lblCountToFix
+                    if (MainForm.IsHasEmptyField(dgv, i))
                     {
-                        //TODO сделаем ищем округ.
+                        dgv[MainForm.STATUS_FIELD, i].Value = "PROBLEMS";
+                        countToFix++;
                     }
+                    else
+                    {
+                        dgv[MainForm.STATUS_FIELD, i].Value = "GOOD";
+                    }
+
+                    sb.Clear();
+                    sb.Append("Необходимо исправлять: ");
+                    sb.Append(countToFix);
+                    sb.Append('/');
+                    sb.Append(i + 1);
+                    lblCountToFix.Invoke((MethodInvoker)(() => lblCountToFix.Text = sb.ToString()));
+
                 }
-
-                //Progress
-                ///lblProgress
-                sb.Clear();
-                sb.Append(i + 1);
-                sb.Append("/");
-                sb.Append(dgv.Rows.Count);
-
-                lblProgress.Invoke((MethodInvoker)(() => lblProgress.Text = sb.ToString()));
-
-                ///lblRemained
-                TimeSpan timeRemained = TimeSpan.FromTicks(DateTime.Now.Subtract(startTime).Ticks *
-                    (dgv.Rows.Count - (i + 1)) / (i + 1));
-                lblRemained.Invoke((MethodInvoker)(() => lblRemained.Text = "Осталось: " + timeRemained.ToString()));
-
-                ///pbProgress
-                pbProgress.Invoke((MethodInvoker)(() => pbProgress.Increment(1)));
-
-                ///StatusField, lblCountToFix
-                if (MainForm.IsHasEmptyField(dgv, i))
-                {
-                    dgv[MainForm.STATUS_FIELD, i].Value = "PROBLEMS";
-                    countToFix++;
-                    lblCountToFix.Invoke((MethodInvoker)(() => lblCountToFix.Text = "Необходимо исправлять: " + countToFix.ToString()));
-                }
-                else
-                {
-                    dgv[MainForm.STATUS_FIELD, i].Value = "GOOD";
-                }
-
+                Parsed = true;
+                MessageBox.Show("Обработка завершена.");
+                SwitchGUI(true);
             }
-            Parsed = true;
-            MessageBox.Show("Обработка завершена.");
-            SwitchGUI(true);
+            catch(Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
         }
 
     }

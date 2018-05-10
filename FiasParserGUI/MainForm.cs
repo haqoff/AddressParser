@@ -34,6 +34,8 @@ namespace FiasParserGUI
             dgvContent.AllowUserToDeleteRows = false;
             dgvContent.AllowUserToAddRows = false;
             dgvContent.AllowUserToOrderColumns = false;
+
+            SwitchGUI(false);
         }
 
 
@@ -197,12 +199,11 @@ namespace FiasParserGUI
 
         public static bool IsHasEmptyField(DataGridView dgv, int rowIndex)
         {
-            if (string.IsNullOrEmpty(dgv[DISTRICT_FIELD, rowIndex].ToString())
-                || string.IsNullOrEmpty(dgv[REGION_FIELD, rowIndex].ToString())
-                  || string.IsNullOrEmpty(dgv[CITY_FIELD, rowIndex].ToString())
-                  || string.IsNullOrEmpty(dgv[STREET_FIELD, rowIndex].ToString())
-                  || string.IsNullOrEmpty(dgv[HOUSE_FIELD, rowIndex].ToString())
-                  || string.IsNullOrEmpty(dgv[STATUS_FIELD, rowIndex].ToString())) return true;
+            if (string.IsNullOrEmpty(dgv[DISTRICT_FIELD, rowIndex].Value?.ToString())
+                || string.IsNullOrEmpty(dgv[REGION_FIELD, rowIndex].Value?.ToString())
+                  || string.IsNullOrEmpty(dgv[CITY_FIELD, rowIndex].Value?.ToString())
+                  || string.IsNullOrEmpty(dgv[STREET_FIELD, rowIndex].Value?.ToString())
+                  || string.IsNullOrEmpty(dgv[HOUSE_FIELD, rowIndex].Value?.ToString())) return true;
             return false;
         }
 
@@ -215,8 +216,7 @@ namespace FiasParserGUI
             var cautionMessage = "Имеются несохранённые изменения!\nВы точно хотите выйти?";
             if (hasUnsavedChanges &&
                 MessageBox.Show(cautionMessage, "Предупреждение", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning)
-                == DialogResult.Yes)
-            {
+                != DialogResult.Yes) return false;
 
                 dgvContent.Columns.Clear();
 
@@ -225,10 +225,9 @@ namespace FiasParserGUI
                 SwitchGUI(false);
 
                 fileOpened = false;
+                hasUnsavedChanges = false;
 
                 return true;
-            }
-            return false;
         }
 
         private void ClearSideBar()
@@ -260,6 +259,7 @@ namespace FiasParserGUI
             else
             {
                 pSide.Enabled = false;
+                gbAddress.Enabled = false;
             }
 
             miProccessing.Enabled = fileOpened;
@@ -281,6 +281,10 @@ namespace FiasParserGUI
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
             if (!TryCloseFile()) e.Cancel = true;
+            else
+            {
+                parser.Close();
+            }
         }
 
         private void miSaveAs_Click(object sender, EventArgs e)
@@ -293,10 +297,7 @@ namespace FiasParserGUI
             }
         }
 
-        private void miSave_Click(object sender, EventArgs e)
-        {
-            Save(dgvContent, openedFilePath);
-        }
+        private void miSave_Click(object sender, EventArgs e) => Save(dgvContent, openedFilePath);
 
         private void miFiasParse_Click(object sender, EventArgs e)
         {
@@ -315,25 +316,27 @@ namespace FiasParserGUI
         {
             
 
-            if (CheckTableForParsedData(dgvContent) && dgvContent.SelectedCells.Count > 0)
+            if (dgvContent.SelectedCells.Count > 0 && CheckTableForParsedData(dgvContent))
             {
                 var rowIndex = dgvContent.SelectedCells[0].RowIndex;
                 lblRowIndex.Text = "Номер строки: " + (rowIndex + 1).ToString();
-                lblStatus.Text = "Статус: " + dgvContent[STATUS_FIELD, rowIndex].Value.ToString();
+                lblStatus.Text = "Статус: " + dgvContent[STATUS_FIELD, rowIndex].Value?.ToString();
 
-                tbDistrict.Text = dgvContent[DISTRICT_FIELD, rowIndex].Value.ToString();
-                tbRegion.Text = dgvContent[REGION_FIELD, rowIndex].Value.ToString();
-                tbCity.Text = dgvContent[CITY_FIELD, rowIndex].Value.ToString();
-                tbStreet.Text = dgvContent[STREET_FIELD, rowIndex].Value.ToString();
-                tbHouse.Text = dgvContent[HOUSE_FIELD, rowIndex].Value.ToString();
+                tbDistrict.Text = dgvContent[DISTRICT_FIELD, rowIndex].Value?.ToString();
+                tbRegion.Text = dgvContent[REGION_FIELD, rowIndex].Value?.ToString();
+                tbCity.Text = dgvContent[CITY_FIELD, rowIndex].Value?.ToString();
+                tbStreet.Text = dgvContent[STREET_FIELD, rowIndex].Value?.ToString();
+                tbHouse.Text = dgvContent[HOUSE_FIELD, rowIndex].Value?.ToString();
 
                 //TODO ЗДЕСЬ НУЖНО сразу переходить на пустое данное, если такое есть.
 
                 pSide.Enabled = true;
+                gbAddress.Enabled = true;
             }
             else
             {
                 ClearSideBar();
+                gbAddress.Enabled = false;
                 pSide.Enabled = false;
             }
         }

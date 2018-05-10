@@ -1,8 +1,7 @@
 ﻿using AddressSplitterLib;
 using AddressSplitterLib.AO;
 using AddressSplitterLib.Utils;
-using FiasParserLib.Exceptions;
-using System;
+using FiasParserGUI.Exceptions;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -22,7 +21,8 @@ namespace FiasParserLib
         public FiasParser(string connectionString)
         {
             dataContext = new FiasClassesDataContext(connectionString);
-            if (!dataContext.DatabaseExists()) throw new IOException("Не удалось подключиться к БД.");
+            dataContext.CommandTimeout = 0;
+            if (!dataContext.DatabaseExists()) throw new BadLoginException("Не удалось подключиться к БД.");
 
             bannedAbbriviatedNames = new List<string>();
             bannedAbbriviatedNames.Add("к.");
@@ -46,7 +46,7 @@ namespace FiasParserLib
 
             foreach (Variant variant in parser.Parse(source))
             {
-                var lastFindedNodes = new List<ObjectNode>();
+                List<ObjectNode> lastFindedNodes = null;
 
                 foreach (var versionObj in variant)
                 {
@@ -68,7 +68,7 @@ namespace FiasParserLib
                 }
 
 
-                if (lastFindedNodes.Count > 0)
+                if (lastFindedNodes?.Count > 0)
                 {
                     if (bestVariant.Count == 0) bestVariant = lastFindedNodes;
                     else
@@ -100,14 +100,14 @@ namespace FiasParserLib
                 {
                     var qWithLitter = (from h in dataContext.House
                                        where h.HOUSENUM == nameWithoutHousing && h.AOGUID == obj.Guid && h.BUILDNUM == housing && h.STRUCNUM == null
-                                       select new ObjectNode(h.HOUSEGUID, nameWithoutHousing + ", корпус " + housing, TableType.House, obj)).ToList().Distinct();
+                                       select new ObjectNode(h.HOUSEGUID, nameWithoutHousing + ", корпус " + housing, TableType.House, obj.Guid,obj)).ToList().Distinct();
                     houseGuids.AddRange(qWithLitter);
 
                     if (houseGuids.Count == 0)
                     {
                         var qWithLitter2 = (from h in dataContext.House
                                             where h.HOUSENUM == nameWithoutHousing && h.AOGUID == obj.Guid && h.BUILDNUM == housing
-                                            select new ObjectNode(h.HOUSEGUID, nameWithoutHousing+", корпус "+housing, TableType.House, obj)).ToList().Distinct();
+                                            select new ObjectNode(h.HOUSEGUID, nameWithoutHousing + ", корпус " + housing, TableType.House, obj.Guid,obj)).ToList().Distinct();
                         houseGuids.AddRange(qWithLitter2);
                     }
                 }
@@ -116,7 +116,7 @@ namespace FiasParserLib
                 {
                     var qWithLitter = (from h in dataContext.House
                                        where h.HOUSENUM == house.Name && h.AOGUID == obj.Guid && h.STRUCNUM == null && h.BUILDNUM == null
-                                       select new ObjectNode(h.HOUSEGUID, house.Name, TableType.House, obj)).ToList().Distinct();
+                                       select new ObjectNode(h.HOUSEGUID, house.Name, TableType.House, obj.Guid,obj)).ToList().Distinct();
                     houseGuids.AddRange(qWithLitter);
                 }
 
@@ -125,7 +125,7 @@ namespace FiasParserLib
 
                     var qWithNumericHousing = (from h in dataContext.House
                                                where h.HOUSENUM == nameWithoutHousing && h.AOGUID == obj.Guid && (h.BUILDNUM == housing || h.STRUCNUM == housing)
-                                               select new ObjectNode(h.HOUSEGUID, house.Name, TableType.House, obj)).ToList().Distinct();
+                                               select new ObjectNode(h.HOUSEGUID, house.Name, TableType.House, obj.Guid, obj)).ToList().Distinct();
                     houseGuids.AddRange(qWithNumericHousing);
 
                 }
@@ -133,7 +133,7 @@ namespace FiasParserLib
                 {
                     var q = (from h in dataContext.House
                              where h.HOUSENUM == house.Name && h.AOGUID == obj.Guid
-                             select new ObjectNode(h.HOUSEGUID, house.Name, TableType.House, obj)).ToList().Distinct();
+                             select new ObjectNode(h.HOUSEGUID, house.Name, TableType.House, obj.Guid, obj)).ToList().Distinct();
                     houseGuids.AddRange(q);
                 }
             }
@@ -148,7 +148,7 @@ namespace FiasParserLib
             {
                 var q = (from r in dataContext.Room
                          where r.FLATNUMBER == room.Name && r.HOUSEGUID == house.Guid
-                         select new ObjectNode(r.ROOMGUID, room.Name, TableType.Room, house)).ToList();
+                         select new ObjectNode(r.ROOMGUID, room.Name, TableType.Room, house.Guid,house)).ToList().Distinct();
 
                 roomsGuids.AddRange(q);
             }
@@ -160,64 +160,100 @@ namespace FiasParserLib
         {
             var result = new List<ObjectNode>();
 
-            if (prevNodes !=null && prevNodes.Count > 0)
+            if (prevNodes != null)
             {
                 foreach (var prevNode in prevNodes)
                 {
                     var query = (from obj in dataContext.Object
                                  where obj.FORMALNAME == variantObj.Name && obj.PARENTGUID == prevNode.Guid && obj.ACTSTATUS == 1 && obj.AOLEVEL >= prevNode.AOLevel
-                                 select new ObjectNode(obj.AOGUID, obj.FORMALNAME, TableType.Object, prevNode, obj.SHORTNAME, obj.AOLEVEL)).ToList();
+                                 select new ObjectNode(obj.AOGUID, variantObj.Name, TableType.Object, prevNode.Guid,prevNode, obj.SHORTNAME ,obj.AOLEVEL)).ToList();
+
+                    result.AddRange(query);
 
                     if (query.Count == 0 && !retrying)
                     {
                         var allQ = (from obj in dataContext.Object
                                     where obj.PARENTGUID == prevNode.Guid && obj.ACTSTATUS == 1
-                                    select new ObjectNode(obj.AOGUID, obj.FORMALNAME, TableType.Object, prevNode, obj.SHORTNAME, obj.AOLEVEL)).ToList();
+                                    select new ObjectNode(obj.AOGUID, obj.FORMALNAME, TableType.Object, prevNode.Guid,prevNode, obj.SHORTNAME, obj.AOLEVEL)).ToList();
 
-                        var missed = IterateAddressObject(variantObj, allQ);
-                        if (missed.Count > 0) result.AddRange(missed);
-                        else
+                        if (allQ.Count > 0 && allQ.Count < 500)
                         {
-                            if (!retrying)
-                            {
-                                var concrete = IterateAddressObject(variantObj, null, true);
-                                result.AddRange(concrete);
-                            }
-                            if (prevNode.AOLevel < 4) result.AddRange(prevNodes);
+                            var missed = IterateAddressObject(variantObj, allQ, true);
+                            result.AddRange(missed);
                         }
                     }
                 }
+                //TODO
+                if (result.Count == 0 && !retrying && false)
+                {
+                    var concrete = IterateAddressObject(variantObj, null, true);
+                    result.AddRange(concrete);
+                    foreach (var prevNode in prevNodes)
+                    {
+                        if (prevNode.AOLevel < 4) result.Add(prevNode);
+                    }
+                }
             }
-            else
-            { 
+            else if (prevNodes == null)
+            {
                 var firstQuery = (from obj in dataContext.Object
                                   where obj.FORMALNAME == variantObj.Name && obj.ACTSTATUS == 1
-                                  select new ObjectNode(obj.AOGUID, obj.FORMALNAME, TableType.Object, null, obj.SHORTNAME, obj.AOLEVEL)).ToList();
+                                  select new ObjectNode(obj.AOGUID, variantObj.Name, TableType.Object, obj.PARENTGUID, null, obj.SHORTNAME, obj.AOLEVEL)).ToList();
+                result = firstQuery;
+            }
 
-                if (variantObj.Type?.AbbreviatedName != null)
+
+            if (variantObj.Type != null)
+            {
+                var types = dictionary.GetAOTypes(variantObj.Type.AbbreviatedName);
+
+                for (int i = 0; i < result.Count; i++)
                 {
-                    List<AddressSplitterLib.AddressObjectType> types = dictionary.GetAOTypes(variantObj.Type.AbbreviatedName);
-
-                    for (int i = 0; i < firstQuery.Count; i++)
+                    bool finded = false;
+                    foreach (var type in types)
                     {
-                        bool abbrFinded = false;
-
-                        foreach (var type in types)
+                        if (result[i].AOLevel == type.Level)
                         {
-                            if (firstQuery[i].AOLevel == type.Level) abbrFinded = true;
+                            finded = true;
+                            break;
                         }
+                    }
 
-                        if (!abbrFinded)
+                    if (!finded)
+                    {
+                        if (result.Count > 1)
                         {
-                            firstQuery.RemoveAt(i);
+                            result.RemoveAt(i);
                             i--;
                         }
                     }
                 }
-                result = firstQuery;
+            }
+            else if (result.Count > 50)
+            {
+                //берём самое минимальное
+                int minAO = int.MaxValue;
+                foreach (var r in result)
+                {
+                    if (r.AOLevel < minAO) minAO = r.AOLevel;
+                }
+                var sorted = new List<ObjectNode>();
+                for (int i = 0; i < result.Count; i++)
+                {
+                    if (result[i].AOLevel == minAO) sorted.Add(result[i]);
+                }
+                result = sorted;
             }
 
             return result;
+        }
+
+        public ObjectNode GetActualHierarchy(ObjectNode node)
+        {
+            ObjectNode res = null;
+            if (node == null) return null;
+
+
         }
 
 
@@ -235,11 +271,25 @@ namespace FiasParserLib
             return dictionary;
         }
 
+        public string GetDistrictByRegion(string regionName)
+        {
+            var q = (from d in dataContext.District
+                     select d.District1).FirstOrDefault();
+
+            return q;
+        }
+
 
         public void Close()
         {
-            dataContext.Connection.Close();
-            dataContext.Dispose();
+            try
+            {
+                dataContext.Connection.Close();
+            }
+            catch
+            {
+
+            }
         }
 
     }
