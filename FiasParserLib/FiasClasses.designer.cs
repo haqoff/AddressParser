@@ -42,7 +42,12 @@ namespace FiasParserLib
     partial void InsertAddressObjectType(AddressObjectType instance);
     partial void UpdateAddressObjectType(AddressObjectType instance);
     partial void DeleteAddressObjectType(AddressObjectType instance);
-    #endregion		
+    partial void InsertDistrict(District instance);
+    partial void UpdateDistrict(District instance);
+    partial void DeleteDistrict(District instance);
+    #endregion
+		
+
 		
 		public FiasClassesDataContext(string connection) : 
 				base(connection, mappingSource)
@@ -97,6 +102,14 @@ namespace FiasParserLib
 			get
 			{
 				return this.GetTable<AddressObjectType>();
+			}
+		}
+		
+		public System.Data.Linq.Table<District> District
+		{
+			get
+			{
+				return this.GetTable<District>();
 			}
 		}
 	}
@@ -2268,6 +2281,92 @@ namespace FiasParserLib
 					this._KOD_T_ST = value;
 					this.SendPropertyChanged("KOD_T_ST");
 					this.OnKOD_T_STChanged();
+				}
+			}
+		}
+		
+		public event PropertyChangingEventHandler PropertyChanging;
+		
+		public event PropertyChangedEventHandler PropertyChanged;
+		
+		protected virtual void SendPropertyChanging()
+		{
+			if ((this.PropertyChanging != null))
+			{
+				this.PropertyChanging(this, emptyChangingEventArgs);
+			}
+		}
+		
+		protected virtual void SendPropertyChanged(String propertyName)
+		{
+			if ((this.PropertyChanged != null))
+			{
+				this.PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
+			}
+		}
+	}
+	
+	[global::System.Data.Linq.Mapping.TableAttribute(Name="dbo.District")]
+	public partial class District : INotifyPropertyChanging, INotifyPropertyChanged
+	{
+		
+		private static PropertyChangingEventArgs emptyChangingEventArgs = new PropertyChangingEventArgs(String.Empty);
+		
+		private string _Region;
+		
+		private string _District1;
+		
+    #region Определения метода расширяемости
+    partial void OnLoaded();
+    partial void OnValidate(System.Data.Linq.ChangeAction action);
+    partial void OnCreated();
+    partial void OnRegionChanging(string value);
+    partial void OnRegionChanged();
+    partial void OnDistrict1Changing(string value);
+    partial void OnDistrict1Changed();
+    #endregion
+		
+		public District()
+		{
+			OnCreated();
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_Region", DbType="VarChar(50) NOT NULL", CanBeNull=false, IsPrimaryKey=true)]
+		public string Region
+		{
+			get
+			{
+				return this._Region;
+			}
+			set
+			{
+				if ((this._Region != value))
+				{
+					this.OnRegionChanging(value);
+					this.SendPropertyChanging();
+					this._Region = value;
+					this.SendPropertyChanged("Region");
+					this.OnRegionChanged();
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Name="District", Storage="_District1", DbType="VarChar(50) NOT NULL", CanBeNull=false)]
+		public string District1
+		{
+			get
+			{
+				return this._District1;
+			}
+			set
+			{
+				if ((this._District1 != value))
+				{
+					this.OnDistrict1Changing(value);
+					this.SendPropertyChanging();
+					this._District1 = value;
+					this.SendPropertyChanged("District1");
+					this.OnDistrict1Changed();
 				}
 			}
 		}

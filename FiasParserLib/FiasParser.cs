@@ -17,6 +17,7 @@ namespace FiasParserLib
         private AOTypeDictionary dictionary;
         private StringBuilder sb;
         private List<string> bannedAbbriviatedNames;
+        public ObjectConverter Converter { get; private set; }
 
 
         public FiasParser(string connectionString)
@@ -37,6 +38,7 @@ namespace FiasParserLib
             dictionary.Add(new AddressSplitterLib.AddressObjectType("проспект", "пр.", 7));
             dictionary.Add(new AddressSplitterLib.AddressObjectType("квартира", "к", 9));
             dictionary.Sort();
+            Converter = new ObjectConverter(dataContext);
             parser = new AddressParser(dictionary);
         }
 
@@ -522,6 +524,8 @@ namespace FiasParserLib
         }
 
     }
+
+
 
     public struct ParseResult
     {

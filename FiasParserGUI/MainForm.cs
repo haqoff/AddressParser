@@ -15,6 +15,11 @@ namespace FiasParserGUI
         private const string PARSEDNAME_FIELD = "PARSEDNAME";
         private const string IDTYPE_FIELD = "ID TYPE";
         private const string LAST_FINDED_OBJECT_FIELED = "Last Finded Name";
+        private const string DISTRICT_FIELD = "DISTRICT";
+        private const string REGION_FIELD = "REGION";
+        private const string CITY_FIELD = "CITY";
+        private const string STREET_FIELD = "STREET";
+        private const string HOUSE_FIELD = "HOUSE";
 
         private string lastSavePath;
 
@@ -68,7 +73,7 @@ namespace FiasParserGUI
         {
             if (tbSheetName.Text == "") return false;
 
-            var connectionString = String.Format("Provider=Microsoft.Jet.OLEDB.4.0;Data Source={0}; Extended Properties=\"Excel 8.0;HDR=Yes;\";", path);
+            var connectionString = String.Format("Provider=Microsoft.ACE.OLEDB.12.0;Data Source={0}; Extended Properties=\"Excel 8.0;HDR=Yes;\";", path);
             var queryString = String.Format("Select * from [{0}$]", tbSheetName.Text);
 
             try
@@ -558,6 +563,71 @@ namespace FiasParserGUI
         private void btnSave_Click(object sender, EventArgs e)
         {
             if (!string.IsNullOrEmpty(lastSavePath)) Save(lastSavePath);
+        }
+
+        private void btnCreateMap_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                var x = table.Rows[0][GUID_FIELD];
+                var y = table.Rows[0][IDTYPE_FIELD];
+            }
+            catch
+            {
+                MessageBox.Show("В таблице нет столбца с ID/IDTYPE для того, чтобы простроить иерархию.");
+                return;
+            }
+
+            btnCreateMap.Enabled = false;
+
+            table.Columns.Add(DISTRICT_FIELD,typeof(string));
+            table.Columns.Add(REGION_FIELD,typeof(string));
+            table.Columns.Add(CITY_FIELD,typeof(string));
+            table.Columns.Add(STREET_FIELD,typeof(string));
+            table.Columns.Add(HOUSE_FIELD,typeof(string));
+
+            //
+            var th = new Thread(CreateMap);
+            th.Start();
+        }
+
+        private void CreateMap()
+        {
+            pbParse.Invoke(new Action(() => { pbParse.Maximum = table.Rows.Count; }));
+            for (int i = 0; i < table.Rows.Count; i++)
+            {
+                var row = table.Rows[i];
+                var typeString = row[IDTYPE_FIELD].ToString();
+                var id = row[GUID_FIELD];
+                    
+                if (!string.IsNullOrEmpty(typeString.ToString()))
+                {
+                    Enum.TryParse(typeString.ToString(), out IdType type);
+
+                    var parsedObjs = parser.Converter.GetPreviousObjects(id.ToString(), type);
+
+                    row[DISTRICT_FIELD] = parser.Converter.GetDistrict(parsedObjs);
+
+                    var region = parser.Converter.GetRegion(parsedObjs);
+                    row[REGION_FIELD] = region?.shortName + " " + region?.name;
+
+                    var city = parser.Converter.GetCity(parsedObjs);
+                    row[CITY_FIELD] = city?.shortName + " " + city?.name;
+
+                    var street = parser.Converter.GetStreet(parsedObjs);
+                    row[STREET_FIELD] = street?.shortName + " " + street?.name;
+
+                    var house = parser.Converter.GetHouse(parsedObjs);
+                    row[HOUSE_FIELD] = house?.name;
+
+                    if (city == null && region != null && region.shortName.StartsWith("г"))
+                        row[CITY_FIELD] = row[REGION_FIELD];
+                    pbParse.Invoke(new Action(() => { pbParse.Increment(1); }));
+                }
+                    
+                        
+            }
+
         }
     }
 }

@@ -49,9 +49,10 @@
             this.comboBox1 = new System.Windows.Forms.ComboBox();
             this.lblLoading = new System.Windows.Forms.Label();
             this.pMenu = new System.Windows.Forms.Panel();
+            this.btnSave = new System.Windows.Forms.Button();
             this.btnSaveAs = new System.Windows.Forms.Button();
             this.btnLoadFromFile = new System.Windows.Forms.Button();
-            this.btnSave = new System.Windows.Forms.Button();
+            this.btnCreateMap = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.dgvContent)).BeginInit();
             this.pParsingProgress.SuspendLayout();
             this.pCustomAddress.SuspendLayout();
@@ -79,7 +80,7 @@
             // 
             // tbSheetName
             // 
-            this.tbSheetName.Location = new System.Drawing.Point(281, 9);
+            this.tbSheetName.Location = new System.Drawing.Point(264, 9);
             this.tbSheetName.Name = "tbSheetName";
             this.tbSheetName.Size = new System.Drawing.Size(106, 20);
             this.tbSheetName.TabIndex = 2;
@@ -256,6 +257,7 @@
             // pMenu
             // 
             this.pMenu.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.pMenu.Controls.Add(this.btnCreateMap);
             this.pMenu.Controls.Add(this.btnSave);
             this.pMenu.Controls.Add(this.btnSaveAs);
             this.pMenu.Controls.Add(this.btnLoadFromFile);
@@ -265,6 +267,17 @@
             this.pMenu.Name = "pMenu";
             this.pMenu.Size = new System.Drawing.Size(992, 36);
             this.pMenu.TabIndex = 7;
+            // 
+            // btnSave
+            // 
+            this.btnSave.Enabled = false;
+            this.btnSave.Location = new System.Drawing.Point(804, 6);
+            this.btnSave.Name = "btnSave";
+            this.btnSave.Size = new System.Drawing.Size(82, 23);
+            this.btnSave.TabIndex = 10;
+            this.btnSave.Text = "Сохранить";
+            this.btnSave.UseVisualStyleBackColor = true;
+            this.btnSave.Click += new System.EventHandler(this.btnSave_Click);
             // 
             // btnSaveAs
             // 
@@ -286,16 +299,15 @@
             this.btnLoadFromFile.UseVisualStyleBackColor = true;
             this.btnLoadFromFile.Click += new System.EventHandler(this.btnLoadFromFile_Click);
             // 
-            // btnSave
+            // btnCreateMap
             // 
-            this.btnSave.Enabled = false;
-            this.btnSave.Location = new System.Drawing.Point(804, 6);
-            this.btnSave.Name = "btnSave";
-            this.btnSave.Size = new System.Drawing.Size(82, 23);
-            this.btnSave.TabIndex = 10;
-            this.btnSave.Text = "Сохранить";
-            this.btnSave.UseVisualStyleBackColor = true;
-            this.btnSave.Click += new System.EventHandler(this.btnSave_Click);
+            this.btnCreateMap.Location = new System.Drawing.Point(407, 6);
+            this.btnCreateMap.Name = "btnCreateMap";
+            this.btnCreateMap.Size = new System.Drawing.Size(119, 23);
+            this.btnCreateMap.TabIndex = 11;
+            this.btnCreateMap.Text = "Создать иерархию";
+            this.btnCreateMap.UseVisualStyleBackColor = true;
+            this.btnCreateMap.Click += new System.EventHandler(this.btnCreateMap_Click);
             // 
             // MainForm
             // 
@@ -348,6 +360,7 @@
         private System.Windows.Forms.Button btnSaveAs;
         private System.Windows.Forms.Label lblLastWritedRow;
         private System.Windows.Forms.Button btnSave;
+        private System.Windows.Forms.Button btnCreateMap;
     }
 }
 
