@@ -29,6 +29,9 @@ namespace FiasParserGUI
             catch
             {
                 MessageBox.Show("Не удалось подключиться к БД. Проверьте данные для подключения.");
+            }
+            finally
+            {
                 btnLogin.Enabled = true;
             }
         }

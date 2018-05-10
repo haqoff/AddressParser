@@ -17,7 +17,6 @@ namespace FiasParserLib
         private AOTypeDictionary dictionary;
         private StringBuilder sb;
         private List<string> bannedAbbriviatedNames;
-        public ObjectConverter Converter { get; private set; }
 
 
         public FiasParser(string connectionString)
@@ -31,169 +30,63 @@ namespace FiasParserLib
 
             sb = new StringBuilder();
             dictionary = GetDictionaryFromSql();
-           
+
             dictionary.Add(new AddressSplitterLib.AddressObjectType("область", "область", 1, AddressSplitterLib.AddressObjectType.GenderNoun.Fiminine));
             dictionary.Add(new AddressSplitterLib.AddressObjectType("область", "обл", 1, AddressSplitterLib.AddressObjectType.GenderNoun.Fiminine));
             dictionary.Add(new AddressSplitterLib.AddressObjectType("проспект", "пр-т", 7));
             dictionary.Add(new AddressSplitterLib.AddressObjectType("проспект", "пр.", 7));
             dictionary.Add(new AddressSplitterLib.AddressObjectType("квартира", "к", 9));
             dictionary.Sort();
-            Converter = new ObjectConverter(dataContext);
             parser = new AddressParser(dictionary);
         }
 
-        public ParseResult Parse(string source)
+        public List<ObjectNode> Parse(string source)
         {
-            var variants = new List<SearchVariant>();
-            bool alreadyFinded;
+            var bestVariant = new List<ObjectNode>();
 
-            foreach (var variant in parser.Parse(source))
+            foreach (Variant variant in parser.Parse(source))
             {
-                var sVariant = new SearchVariant();
-                alreadyFinded = false;
+                var lastFindedNodes = new List<ObjectNode>();
 
-                int cur = -1;
                 foreach (var versionObj in variant)
                 {
-                    cur++;
 
                     if (versionObj.Type?.Level == 9)
                     {
-                        sVariant.RoomGuids = GetRoomsGUIDVariants(versionObj, sVariant.HouseGuids);
-                        if (sVariant.RoomGuids.Count > 0)
-                        {
-                            sVariant.FullAddress.Append("помещение ");
-                            sVariant.LastFindedName = versionObj.Name;
-                            sVariant.FullAddress.Append(versionObj.Name);
-                            sVariant.FullAddress.Append("-->");
-                        }
-                        if (sVariant.HouseGuids.Count == 1 || sVariant.RoomGuids.Count == 1) alreadyFinded = true;
-                        continue;
+                        var roomNodes = GetRoomsGUIDVariants(versionObj, lastFindedNodes);
+                        if (roomNodes.Count > 0) lastFindedNodes = roomNodes;
                     }
-
-                    if (versionObj.Type?.Level == 8)
+                    else if (versionObj.Type?.Level == 8)
                     {
-                        sVariant.HouseGuids = GetHousesGUIDVariants(versionObj, sVariant.PrevObjects);
-                        if (sVariant.HouseGuids.Count > 0)
-                        {
-                            sVariant.FullAddress.Append("строение ");
-                            sVariant.LastFindedName = versionObj.Name;
-                            sVariant.FullAddress.Append(versionObj.Name);
-                            sVariant.FullAddress.Append("-->");
-                        }
-                        if (sVariant.HouseGuids.Count == 1 && cur == variant.GetCount() - 1&& sVariant.CountFinded>1) alreadyFinded = true;
-                        continue;
+                        var houseNodes = GetHousesGUIDVariants(versionObj, lastFindedNodes);
+                        if (houseNodes.Count > 0) lastFindedNodes = houseNodes;
                     }
-
-                    var newObjs = IterateAddressObject(versionObj, sVariant.PrevObjects);
-                    if (newObjs.Count == 1 && cur == variant.GetCount() - 1) alreadyFinded = true;
-                    if (newObjs.Count > 0 && newObjs[newObjs.Count - 1] != null)
+                    else
                     {
-                        sVariant.LastFindedName = versionObj.Name;
-                        sVariant.FullAddress.Append(versionObj.Name);
-                        sVariant.FullAddress.Append("-->");
-                        sVariant.PrevObjects = newObjs;
-                        sVariant.CountFinded++;
-                    }
-
-                }
-                variants.Add(sVariant);
-                if (alreadyFinded) break;
-            }
-
-            int maxCountFinded = int.MinValue;
-
-            foreach (var item in variants)
-            {
-                if (item.CountFinded > maxCountFinded) maxCountFinded = item.CountFinded;
-            }
-
-            int maxLevelObj = Int32.MinValue;
-            foreach (var item in variants)
-            {
-                if (maxCountFinded != item.CountFinded) continue;
-                if (item.RoomGuids.Count > 0 && 9 > maxLevelObj)
-                {
-                    maxLevelObj = 9;
-                    continue;
-                }
-                else if (item.HouseGuids.Count > 0 && 8 > maxLevelObj)
-                {
-                    maxLevelObj = 8;
-                    continue;
-                }
-                foreach (var obj in item.PrevObjects)
-                {
-                    if (obj == null) continue;
-
-                    int lvl = obj.AOLEVEL;
-                    if (lvl > 7) lvl = 7;
-
-                    if (lvl > maxLevelObj) maxLevelObj = lvl;
-                }
-            }
-
-            var bestVariants = new List<SearchVariant>();
-
-            foreach (var item in variants)
-            {
-                if (maxCountFinded != item.CountFinded) continue;
-                if (item.RoomGuids.Count > 0 && maxLevelObj == 9) bestVariants.Add(item);
-                if (item.HouseGuids.Count > 0 && maxLevelObj == 8) bestVariants.Add(item);
-                if (item.PrevObjects.Count > 0 && item.PrevObjects[0] != null && maxLevelObj < 8) bestVariants.Add(item);
-            }
-
-            if (bestVariants.Count > 0)
-            {
-                if (maxLevelObj == 9)
-                {
-                    if (bestVariants[0].RoomGuids.Count > 1) throw new ManyObjectsFindedException(bestVariants[0],
-                               "Найдено много помещений в БД с одинаковым номером, требуется уточнить.");
-                    if (bestVariants[0].RoomGuids.Count == 1)
-                    {
-                        var prRoom = new ParseResult()
-                        {
-                            id = bestVariants[0].RoomGuids[0],
-                            lastFindedName = bestVariants[0].LastFindedName,
-                            type = IdType.Room,
-                            address = bestVariants[0].FullAddress.ToString()
-                        };
-                        return prRoom;
+                        lastFindedNodes = IterateAddressObject(versionObj, lastFindedNodes);
                     }
                 }
-                if (maxLevelObj == 8 || (maxLevelObj == 9 && bestVariants[0].RoomGuids.Count == 0))
-                {
-                    if (bestVariants[0].HouseGuids.Count > 1 && bestVariants[0].PrevObjects.Count>1)
-                        throw new ManyObjectsFindedException(bestVariants[0],
-                                              "Найдено много строений в БД с одинаковым номером на одной улице, требуется уточнить.");
 
-                    var prHouse = new ParseResult()
+
+                if (lastFindedNodes.Count > 0)
+                {
+                    if (bestVariant.Count == 0) bestVariant = lastFindedNodes;
+                    else
                     {
-                        id = bestVariants[0].HouseGuids[0],
-                        lastFindedName = bestVariants[0].LastFindedName,
-                        type = IdType.House,
-                        address = bestVariants[0].FullAddress.ToString()
-                    };
-                    return prHouse;
+                        if (lastFindedNodes[0].Type > bestVariant[0].Type) bestVariant = lastFindedNodes;
+                        else if ((lastFindedNodes[0].Type == bestVariant[0].Type) && (lastFindedNodes.Count < bestVariant.Count))
+                            bestVariant = lastFindedNodes;
+                    }
                 }
-                if (bestVariants[0].PrevObjects.Count > 1) throw new ManyObjectsFindedException(bestVariants[0],
-                                             "Найдено много адресных обьектов, требуется уточнить.");
-
-                var prObject = new ParseResult()
-                {
-                    id = bestVariants[0].PrevObjects[0].AOGUID,
-                    lastFindedName = bestVariants[0].LastFindedName,
-                    type = IdType.Object,
-                    address = bestVariants[0].FullAddress.ToString()
-                };
-                return prObject;
+                var lastObject = variant.GetAddressObject(variant.GetCount() - 1);
+                if (bestVariant.Count == 1 && bestVariant[0].Name.ToLower() == lastObject.Name.ToLower()) return bestVariant;
             }
-            throw new AddressNotFound("Не удалось найти такой адрес, требуется ручной ввод.");
+            return bestVariant;
         }
 
-        private List<string> GetHousesGUIDVariants(AddressObject house, List<ObjectMargins> objects)
+        private List<ObjectNode> GetHousesGUIDVariants(AddressObject house, List<ObjectNode> objects)
         {
-            var houseGuids = new List<string>();
+            var houseGuids = new List<ObjectNode>();
             foreach (var obj in objects)
             {
                 if (obj == null) continue;
@@ -203,18 +96,18 @@ namespace FiasParserLib
                 if (!string.IsNullOrEmpty(housing))
                     nameWithoutHousing = house.Name.Remove(firstIndexHousing, lengthHousing).Replace("/", "");
 
-                if(house.Type?.AbbreviatedName=="дом с корпусом"&& housing.Length>0)
+                if (house.Type?.AbbreviatedName == "дом с корпусом" && housing.Length > 0)
                 {
                     var qWithLitter = (from h in dataContext.House
-                                       where h.HOUSENUM == nameWithoutHousing && h.AOGUID == obj.AOGUID && h.BUILDNUM == housing && h.STRUCNUM == null
-                                       select h.HOUSEGUID).ToList().Distinct();
+                                       where h.HOUSENUM == nameWithoutHousing && h.AOGUID == obj.Guid && h.BUILDNUM == housing && h.STRUCNUM == null
+                                       select new ObjectNode(h.HOUSEGUID, nameWithoutHousing + ", корпус " + housing, TableType.House, obj)).ToList().Distinct();
                     houseGuids.AddRange(qWithLitter);
 
                     if (houseGuids.Count == 0)
                     {
                         var qWithLitter2 = (from h in dataContext.House
-                                           where h.HOUSENUM == nameWithoutHousing && h.AOGUID == obj.AOGUID && h.BUILDNUM == housing
-                                           select h.HOUSEGUID).ToList().Distinct();
+                                            where h.HOUSENUM == nameWithoutHousing && h.AOGUID == obj.Guid && h.BUILDNUM == housing
+                                            select new ObjectNode(h.HOUSEGUID, nameWithoutHousing+", корпус "+housing, TableType.House, obj)).ToList().Distinct();
                         houseGuids.AddRange(qWithLitter2);
                     }
                 }
@@ -222,8 +115,8 @@ namespace FiasParserLib
                 if (houseGuids.Count == 0)
                 {
                     var qWithLitter = (from h in dataContext.House
-                                       where h.HOUSENUM == house.Name && h.AOGUID == obj.AOGUID && h.STRUCNUM == null && h.BUILDNUM == null
-                                       select h.HOUSEGUID).ToList().Distinct();
+                                       where h.HOUSENUM == house.Name && h.AOGUID == obj.Guid && h.STRUCNUM == null && h.BUILDNUM == null
+                                       select new ObjectNode(h.HOUSEGUID, house.Name, TableType.House, obj)).ToList().Distinct();
                     houseGuids.AddRange(qWithLitter);
                 }
 
@@ -231,34 +124,31 @@ namespace FiasParserLib
                 {
 
                     var qWithNumericHousing = (from h in dataContext.House
-                                               where h.HOUSENUM == nameWithoutHousing && h.AOGUID == obj.AOGUID && (h.BUILDNUM == housing || h.STRUCNUM == housing)
-                                               select h.HOUSEGUID).ToList().Distinct();
+                                               where h.HOUSENUM == nameWithoutHousing && h.AOGUID == obj.Guid && (h.BUILDNUM == housing || h.STRUCNUM == housing)
+                                               select new ObjectNode(h.HOUSEGUID, house.Name, TableType.House, obj)).ToList().Distinct();
                     houseGuids.AddRange(qWithNumericHousing);
 
                 }
                 if (houseGuids.Count == 0)
                 {
                     var q = (from h in dataContext.House
-                             where h.HOUSENUM == house.Name && h.AOGUID == obj.AOGUID
-                             select h.HOUSEGUID).ToList().Distinct();
+                             where h.HOUSENUM == house.Name && h.AOGUID == obj.Guid
+                             select new ObjectNode(h.HOUSEGUID, house.Name, TableType.House, obj)).ToList().Distinct();
                     houseGuids.AddRange(q);
                 }
-
             }
-
-
             return houseGuids;
         }
 
-        private List<string> GetRoomsGUIDVariants(AddressObject room, List<string> housesGuids)
+        private List<ObjectNode> GetRoomsGUIDVariants(AddressObject room, List<ObjectNode> houses)
         {
-            var roomsGuids = new List<string>();
+            var roomsGuids = new List<ObjectNode>();
 
-            foreach (var house in housesGuids)
+            foreach (var house in houses)
             {
                 var q = (from r in dataContext.Room
-                         where r.FLATNUMBER == room.Name && r.HOUSEGUID == house
-                         select r.ROOMGUID).ToList().Distinct();
+                         where r.FLATNUMBER == room.Name && r.HOUSEGUID == house.Guid
+                         select new ObjectNode(r.ROOMGUID, room.Name, TableType.Room, house)).ToList();
 
                 roomsGuids.AddRange(q);
             }
@@ -266,106 +156,68 @@ namespace FiasParserLib
             return roomsGuids;
         }
 
-        private List<ObjectMargins> IterateAddressObject(AddressObject variantObj, List<ObjectMargins> prevVariants, bool retrying = false)
+        private List<ObjectNode> IterateAddressObject(AddressObject variantObj, List<ObjectNode> prevNodes, bool retrying = false)
         {
+            var result = new List<ObjectNode>();
 
-            var finded = new List<ObjectMargins>();
-            bool notNullFinded = false;
-
-            foreach (var prevVar in prevVariants)
+            if (prevNodes !=null && prevNodes.Count > 0)
             {
-                if (prevVar != null)
+                foreach (var prevNode in prevNodes)
                 {
                     var query = (from obj in dataContext.Object
-                                 where obj.FORMALNAME == variantObj.Name && obj.PARENTGUID == prevVar.AOGUID
-                                 select new ObjectMargins { AOGUID = obj.AOGUID, AOLEVEL = obj.AOLEVEL }).Distinct().ToList();
+                                 where obj.FORMALNAME == variantObj.Name && obj.PARENTGUID == prevNode.Guid && obj.ACTSTATUS == 1 && obj.AOLEVEL >= prevNode.AOLevel
+                                 select new ObjectNode(obj.AOGUID, obj.FORMALNAME, TableType.Object, prevNode, obj.SHORTNAME, obj.AOLEVEL)).ToList();
 
-                    int min = Int32.MaxValue;
-
-                    foreach (var obj in query)
-                    {
-                        if (obj.AOLEVEL >= prevVar.AOLEVEL && obj.AOLEVEL < min) min = obj.AOLEVEL;
-                    }
-
-                    for (int i = 0; i < query.Count; i++)
-                    {
-                        if (query[i].AOLEVEL != min)
-                        {
-                            query.RemoveAt(i);
-                            i--;
-                        }
-                    }
-                    if (query.Count > 0)
-                    {
-                        finded.AddRange(query);
-                        notNullFinded = true;
-                    }
-                    else if (!retrying && prevVar?.AOLEVEL < 4)
+                    if (query.Count == 0 && !retrying)
                     {
                         var allQ = (from obj in dataContext.Object
-                                    where obj.PARENTGUID == prevVar.AOGUID
-                                    select new ObjectMargins { AOGUID = obj.AOGUID, AOLEVEL = obj.AOLEVEL }).Distinct().ToList();
-                        if (allQ.Count > 0 && allQ.Count < 200)
+                                    where obj.PARENTGUID == prevNode.Guid && obj.ACTSTATUS == 1
+                                    select new ObjectNode(obj.AOGUID, obj.FORMALNAME, TableType.Object, prevNode, obj.SHORTNAME, obj.AOLEVEL)).ToList();
+
+                        var missed = IterateAddressObject(variantObj, allQ);
+                        if (missed.Count > 0) result.AddRange(missed);
+                        else
                         {
-                            finded.AddRange(IterateAddressObject(variantObj, allQ, true));
+                            if (!retrying)
+                            {
+                                var concrete = IterateAddressObject(variantObj, null, true);
+                                result.AddRange(concrete);
+                            }
+                            if (prevNode.AOLevel < 4) result.AddRange(prevNodes);
                         }
-                        if (finded.Count == 0)
-                        {
-                            finded.AddRange(prevVariants);
-                            finded.Add(null);
-                        }
-                        else notNullFinded = true;
                     }
                 }
-                else if (!notNullFinded)
+            }
+            else
+            { 
+                var firstQuery = (from obj in dataContext.Object
+                                  where obj.FORMALNAME == variantObj.Name && obj.ACTSTATUS == 1
+                                  select new ObjectNode(obj.AOGUID, obj.FORMALNAME, TableType.Object, null, obj.SHORTNAME, obj.AOLEVEL)).ToList();
+
+                if (variantObj.Type?.AbbreviatedName != null)
                 {
-                    var firstQuery = (from obj in dataContext.Object
-                                      where obj.FORMALNAME == variantObj.Name
-                                      select new ObjectMargins { AOGUID = obj.AOGUID, AOLEVEL = obj.AOLEVEL }).Distinct().ToList();
-
-                    int min = Int32.MaxValue;
-
-                    if (variantObj.Type?.AbbreviatedName != null)
-                    {
-                        List<AddressSplitterLib.AddressObjectType> types = dictionary.GetAOTypes(variantObj.Type.AbbreviatedName);
-
-                        for (int i = 0; i < firstQuery.Count; i++)
-                        {
-                            bool abbrFinded = false;
-
-                            foreach (var type in types)
-                            {
-                                if (firstQuery[i].AOLEVEL == type.Level) abbrFinded = true;
-                            }
-
-                            if (!abbrFinded)
-                            {
-                                firstQuery.RemoveAt(i);
-                                i--;
-                            }
-                        }
-                    }
-
-                    foreach (var obj in firstQuery)
-                    {
-                        if (obj.AOLEVEL < min) min = obj.AOLEVEL;
-                    }
+                    List<AddressSplitterLib.AddressObjectType> types = dictionary.GetAOTypes(variantObj.Type.AbbreviatedName);
 
                     for (int i = 0; i < firstQuery.Count; i++)
                     {
-                        if (firstQuery[i].AOLEVEL != min)
+                        bool abbrFinded = false;
+
+                        foreach (var type in types)
+                        {
+                            if (firstQuery[i].AOLevel == type.Level) abbrFinded = true;
+                        }
+
+                        if (!abbrFinded)
                         {
                             firstQuery.RemoveAt(i);
                             i--;
                         }
                     }
-                    if (firstQuery.Count > 0) finded.AddRange(firstQuery);
-                    else finded.Add(null);
-
-
                 }
+                result = firstQuery;
             }
-            return finded;
+
+            return result;
         }
 
 
@@ -384,155 +236,12 @@ namespace FiasParserLib
         }
 
 
-        public List<ObjectKnownMargins> SelectAllObject(string formalName, string parentGUID, int prevAOLEVEL)
-        {
-            List<ObjectKnownMargins> result;
-
-            if (parentGUID == null)
-            {
-                result = (from obj in dataContext.Object
-                         where obj.FORMALNAME.StartsWith(formalName)
-                         select new ObjectKnownMargins()
-                         {
-                             AOGUID = obj.AOGUID,
-                             AOLEVEL = obj.AOLEVEL,
-                             FORMALNAME = obj.FORMALNAME,
-                             SHORTNAME = obj.SHORTNAME                               
-                         }).ToList();
-
-                int minAOLEVEL = int.MaxValue;
-                for (int i = 0; i < result.Count; i++)
-                {
-                    if (result[i].AOLEVEL < minAOLEVEL) minAOLEVEL = result[i].AOLEVEL;
-                }
-
-                for (int i = 0; i < result.Count; i++)
-                {
-                    if (result[i].AOLEVEL != minAOLEVEL)
-                    {
-                        result.RemoveAt(i);
-                        i--;                       
-                    }
-                }
-            }
-            else
-            {
-                result = (from obj in dataContext.Object
-                         where obj.FORMALNAME.Contains(formalName) && obj.PARENTGUID==parentGUID && obj.AOLEVEL> prevAOLEVEL
-                         select new ObjectKnownMargins()
-                         {
-                             AOGUID = obj.AOGUID,
-                             AOLEVEL = obj.AOLEVEL,
-                             FORMALNAME = obj.FORMALNAME,
-                             SHORTNAME = obj.SHORTNAME
-                         }).ToList();
-            }
-            for (int i = 0; i < result.Count; i++)
-            {
-                for (int j = i + 1; j < result.Count; j++)
-                {
-                    if (result[i].AOGUID == result[j].AOGUID) result.RemoveAt(j);
-                }
-            }
-            return result;
-        }
-
-        public List<HouseKnownMargins> SelectAllHouses(string aoGuid, string houseNum)
-        {
-            List<HouseKnownMargins> hs;
-            try
-            {
-                if (houseNum == null)
-                {
-                    hs = (from h in dataContext.House
-                          where h.AOGUID == aoGuid
-                          select new HouseKnownMargins()
-                          {
-                              HOUSENUM = h.HOUSENUM,
-                              BUILDNUM = h.BUILDNUM,
-                              HOUSEGUID = h.HOUSEGUID,
-                              STRUCTNUM = h.STRUCNUM
-                          }
-                             ).ToList();
-                }
-                else
-                {
-                    hs = (from h in dataContext.House
-                          where h.AOGUID == aoGuid && h.HOUSENUM.StartsWith(houseNum)
-                          select new HouseKnownMargins()
-                          {
-                              HOUSENUM = h.HOUSENUM,
-                              BUILDNUM = h.BUILDNUM,
-                              HOUSEGUID = h.HOUSEGUID,
-                              STRUCTNUM = h.STRUCNUM
-                          }
-                            ).ToList();
-                }
-            }catch(Exception)
-            {
-                hs = new List<HouseKnownMargins>();
-            }
-            for (int i = 0; i < hs.Count; i++)
-            {
-                for (int j = i + 1; j < hs.Count; j++)
-                {
-                    if (hs[i].HOUSEGUID == hs[j].HOUSEGUID) hs.RemoveAt(j);
-                }
-            }
-            return hs;
-        }
-
-        public List<RoomKnownMargins> SelectAllRoom(string houseGuid, string flatNumber)
-        {
-            List<RoomKnownMargins> rooms;
-
-            if(flatNumber==null)
-            {
-                rooms = (from r in dataContext.Room
-                         where r.HOUSEGUID == houseGuid
-                         select new RoomKnownMargins()
-                         {
-                             FLATNUMBER = r.FLATNUMBER,
-                             ROOMGUID = r.ROOMGUID                           
-                        }).ToList();
-            }
-            else
-            {
-                rooms = (from r in dataContext.Room
-                         where r.HOUSEGUID == houseGuid && r.FLATNUMBER.StartsWith(flatNumber)
-                         select new RoomKnownMargins()
-                         {
-                             FLATNUMBER = r.FLATNUMBER,
-                             ROOMGUID = r.ROOMGUID
-                         }).ToList();
-            }
-
-            for (int i = 0; i < rooms.Count; i++)
-            {
-                for (int j = i + 1; j < rooms.Count; j++)
-                {
-                    if (rooms[i].ROOMGUID == rooms[j].ROOMGUID) rooms.RemoveAt(j);
-                }
-            }
-            return rooms;
-        }
-
-
         public void Close()
         {
+            dataContext.Connection.Close();
             dataContext.Dispose();
         }
 
-    }
-
-
-
-    public struct ParseResult
-    {
-        public string id;
-        public string lastFindedName;
-        public IdType type;
-        public string address;
     }
 
 

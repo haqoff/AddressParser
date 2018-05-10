@@ -143,6 +143,18 @@ namespace AddressSplitterLib
             AObjects.Sort(new AOComparer());
         }
 
+        public AddressObject GetAddressObject(int index)
+        {
+            try
+            {
+                return AObjects[index];
+            }
+            catch(IndexOutOfRangeException ex)
+            {
+                throw ex;
+            }
+        }
+
         public int GetCount()
         {
             return AObjects.Count;
