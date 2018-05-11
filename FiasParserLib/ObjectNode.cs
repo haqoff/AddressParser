@@ -6,9 +6,10 @@
         public string Name { get; private set; }
         public string ShortNameType { get; private set; }
         public string ParentGuid { get; private set; }
-        public ObjectNode Parent { get; private set; }
+        public ObjectNode Parent { get; set; }
         public int AOLevel { get; private set; }
         public TableType Type { get; private set; }
+
 
         public ObjectNode(string guid, string name, TableType type, string parentGuid ,ObjectNode parent, string shortNameType, int aoLevel)
             : this(guid, name, type, parentGuid,parent)
@@ -17,12 +18,13 @@
             AOLevel = aoLevel;
         }
 
-        public ObjectNode(string guid, string name, TableType type, string ParentGuid , ObjectNode parent)
+        public ObjectNode(string guid, string name, TableType type, string parentGuid , ObjectNode parent)
         {
             Guid = guid;
             Name = name;
             Type = type;
             Parent = parent;
+            ParentGuid = parentGuid;
         }
 
         public override bool Equals(object obj)
@@ -42,5 +44,12 @@
             if (Parent != null) result += Parent.GetHashCode();
             return result;
         }
+
+        private enum Status
+        {
+            NEEDBUILD,
+            BUILDED
+        }
+
     }
 }

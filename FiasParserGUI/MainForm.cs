@@ -1,7 +1,7 @@
 ﻿using FiasParserLib;
 using System;
 using System.Data;
-using System.IO;
+using System.Linq;
 using System.Windows.Forms;
 using Excel = Microsoft.Office.Interop.Excel;
 
@@ -17,7 +17,7 @@ namespace FiasParserGUI
 
         public const string DISTRICT_FIELD = "Округ";
         public const string REGION_FIELD = "Область";
-        public const string CITY_FIELD = "Населённый пункт";
+        public const string CITY_FIELD = "Населённый пуsнкт";
         public const string STREET_FIELD = "Улица";
         public const string HOUSE_FIELD = "Дом";
         public const string STATUS_FIELD = "Статус";
@@ -34,6 +34,14 @@ namespace FiasParserGUI
             dgvContent.AllowUserToDeleteRows = false;
             dgvContent.AllowUserToAddRows = false;
             dgvContent.AllowUserToOrderColumns = false;
+            dgvContent.RowHeadersWidth = 70;
+
+            var districts = (from d in parser.DataContext.District
+                             select d.District1).ToList().Distinct();
+            foreach (var d in districts)
+            {
+                cbDistrict.Items.Add(d);
+            }
 
             SwitchGUI(false);
         }
@@ -121,6 +129,7 @@ namespace FiasParserGUI
             Clipboard.Clear();
             dgv.ClearSelection();
             dgv.MultiSelect = false;
+            hasUnsavedChanges = false;
         }
 
         private void ReleaseObject(object obj)
@@ -128,15 +137,14 @@ namespace FiasParserGUI
             try
             {
                 System.Runtime.InteropServices.Marshal.ReleaseComObject(obj);
-                obj = null;
             }
             catch (Exception ex)
             {
-                obj = null;
                 MessageBox.Show("Возникла ошибка при попытке освободить обьект. " + ex.ToString());
             }
             finally
             {
+                obj = null;
                 GC.Collect();
             }
         }
@@ -176,6 +184,11 @@ namespace FiasParserGUI
                     ad.Fill(dt);
 
                     dgvContent.DataSource = dt;
+
+                    foreach (DataGridViewColumn column in dgvContent.Columns)
+                    {
+                        column.SortMode = DataGridViewColumnSortMode.NotSortable;
+                    }
 
                     for (int i = 0; i < dgvContent.Rows.Count; i++)
                     {
@@ -218,21 +231,21 @@ namespace FiasParserGUI
                 MessageBox.Show(cautionMessage, "Предупреждение", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning)
                 != DialogResult.Yes) return false;
 
-                dgvContent.Columns.Clear();
+            dgvContent.Columns.Clear();
 
-                ClearSideBar();
+            ClearSideBar();
 
-                SwitchGUI(false);
+            SwitchGUI(false);
 
-                fileOpened = false;
-                hasUnsavedChanges = false;
+            fileOpened = false;
+            hasUnsavedChanges = false;
 
-                return true;
+            return true;
         }
 
         private void ClearSideBar()
         {
-            tbDistrict.Clear();
+            cbDistrict.SelectedIndex = 0;
             tbRegion.Clear();
             tbCity.Clear();
             tbStreet.Clear();
@@ -290,6 +303,7 @@ namespace FiasParserGUI
         private void miSaveAs_Click(object sender, EventArgs e)
         {
             var sfd = new SaveFileDialog();
+            sfd.Filter = "Excel 2003(*.xls)|*.xls|Excel 2007(*.xlsx)|*.xlsx";
             if (sfd.ShowDialog() == DialogResult.OK)
             {
                 Save(dgvContent, sfd.FileName);
@@ -307,6 +321,10 @@ namespace FiasParserGUI
             if (parseForm.Parsed)
             {
                 hasUnsavedChanges = true;
+                foreach (DataGridViewColumn c in dgvContent.Columns)
+                {
+                    c.SortMode = DataGridViewColumnSortMode.NotSortable;
+                }
                 SwitchGUI(true);
             }
             parseForm.Dispose();
@@ -314,7 +332,6 @@ namespace FiasParserGUI
 
         private void dgvContent_SelectionChanged(object sender, EventArgs e)
         {
-            
 
             if (dgvContent.SelectedCells.Count > 0 && CheckTableForParsedData(dgvContent))
             {
@@ -322,13 +339,22 @@ namespace FiasParserGUI
                 lblRowIndex.Text = "Номер строки: " + (rowIndex + 1).ToString();
                 lblStatus.Text = "Статус: " + dgvContent[STATUS_FIELD, rowIndex].Value?.ToString();
 
-                tbDistrict.Text = dgvContent[DISTRICT_FIELD, rowIndex].Value?.ToString();
+                try
+                {
+                    cbDistrict.SelectedItem = dgvContent[DISTRICT_FIELD, rowIndex].Value?.ToString();
+                }
+                catch
+                {
+                    cbDistrict.SelectedIndex = 0;
+                    dgvContent[DISTRICT_FIELD, rowIndex].Value = cbDistrict.Text;
+                }
                 tbRegion.Text = dgvContent[REGION_FIELD, rowIndex].Value?.ToString();
                 tbCity.Text = dgvContent[CITY_FIELD, rowIndex].Value?.ToString();
                 tbStreet.Text = dgvContent[STREET_FIELD, rowIndex].Value?.ToString();
                 tbHouse.Text = dgvContent[HOUSE_FIELD, rowIndex].Value?.ToString();
+                //когда мы мначинаем менять текст в tbRegion, остальные не успеваюь поменяться, поэтому баг
 
-                //TODO ЗДЕСЬ НУЖНО сразу переходить на пустое данное, если такое есть.
+
 
                 pSide.Enabled = true;
                 gbAddress.Enabled = true;
@@ -339,6 +365,114 @@ namespace FiasParserGUI
                 gbAddress.Enabled = false;
                 pSide.Enabled = false;
             }
+        }
+
+
+        private void MoveNextProblem(DataGridView dgv)
+        {
+            int startRowIndex = 0;
+            if (dgv.SelectedCells.Count > 0) startRowIndex = dgv.SelectedCells[0].RowIndex + 1;
+            else
+            {
+                startRowIndex = dgv.FirstDisplayedScrollingRowIndex;
+            }
+
+            if (startRowIndex > dgv.Rows.Count - 1) return;
+
+            bool finded = false;
+            for (int i = startRowIndex; i < dgv.Rows.Count; i++)
+            {
+                if (dgv[STATUS_FIELD, i].Value?.ToString() == "PROBLEMS")
+                {
+                    dgv.FirstDisplayedScrollingRowIndex = i;
+                    dgv.Rows[i].Selected = true;
+                    finded = true;
+                    SetFixedIfNotEmptyCurrentSelected();
+                    break;
+                }
+            }
+            if (!finded) MessageBox.Show("Проблемных строк, начиная со строки " + startRowIndex.ToString() + ", больше не найдено.");
+        }
+
+
+        private void btnForwardNext_Click(object sender, EventArgs e) => MoveNextProblem(dgvContent);
+
+        private void cbDistrict_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (dgvContent.SelectedCells.Count > 0)
+            {
+                dgvContent[DISTRICT_FIELD, dgvContent.SelectedCells[0].RowIndex].Value = cbDistrict.SelectedItem.ToString();
+                hasUnsavedChanges = true;
+            }
+        }
+
+        private void OnKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode != Keys.Enter) return;
+
+            if (SetFixedIfNotEmptyCurrentSelected()) MoveNextProblem(dgvContent);
+        }
+
+        private void OnTextChanged(object sender, EventArgs e)
+        {
+            if (dgvContent.SelectedCells.Count > 0)
+            {
+                int rowIndex = dgvContent.SelectedCells[0].RowIndex;
+
+                SetIfEquals(sender, tbRegion, REGION_FIELD, rowIndex);
+                SetIfEquals(sender, tbCity, CITY_FIELD, rowIndex);
+                SetIfEquals(sender, tbStreet, STREET_FIELD, rowIndex);
+                SetIfEquals(sender, tbHouse, HOUSE_FIELD, rowIndex);
+
+                if (!string.IsNullOrWhiteSpace(cbDistrict.Text)
+                    && !string.IsNullOrWhiteSpace(tbRegion.Text)
+                    && !string.IsNullOrWhiteSpace(tbCity.Text)
+                    && !string.IsNullOrWhiteSpace(tbStreet.Text)
+                    && !string.IsNullOrWhiteSpace(tbHouse.Text)
+                    && dgvContent[STATUS_FIELD, rowIndex].Value?.ToString() == "PROBLEMS")
+                {
+                    dgvContent[STATUS_FIELD, dgvContent.SelectedCells[0].RowIndex].Value = "FIXED";
+                }
+
+                hasUnsavedChanges = true;
+            }
+        }
+
+        private void SetIfEquals(object sender, TextBox t, string columnName, int rowIndex)
+        {
+            if (sender == t)
+            {
+                dgvContent[columnName, rowIndex].Value = t.Text;
+            }
+        }
+
+        private bool SetFixedIfNotEmptyCurrentSelected()
+        {
+            if (FocusIfEmpty(cbDistrict)) return false;
+            if (FocusIfEmpty(tbRegion)) return false;
+            if (FocusIfEmpty(tbCity)) return false;
+            if (FocusIfEmpty(tbStreet)) return false;
+            if (FocusIfEmpty(tbHouse)) return false;
+
+            dgvContent[STATUS_FIELD, dgvContent.SelectedCells[0].RowIndex].Value = "FIXED";
+
+            return true;
+        }
+
+        private bool FocusIfEmpty(Control c)
+        {
+            if (string.IsNullOrWhiteSpace(c.Text))
+            {
+                c.Select();
+                return true;
+            }
+            return false;
+        }
+
+        private void miSendToDB_Click(object sender, EventArgs e)
+        {
+            var sendForm = new SendToDbForm(parser.DataContext, dgvContent);
+            sendForm.ShowDialog();
         }
     }
 }

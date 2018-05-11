@@ -40,6 +40,7 @@
             this.miSendToDB = new System.Windows.Forms.ToolStripMenuItem();
             this.miSettings = new System.Windows.Forms.ToolStripMenuItem();
             this.gbAddress = new System.Windows.Forms.GroupBox();
+            this.cbDistrict = new System.Windows.Forms.ComboBox();
             this.lblRowIndex = new System.Windows.Forms.Label();
             this.lblStatus = new System.Windows.Forms.Label();
             this.tbHouse = new System.Windows.Forms.TextBox();
@@ -50,10 +51,9 @@
             this.lblCity = new System.Windows.Forms.Label();
             this.tbRegion = new System.Windows.Forms.TextBox();
             this.lblRegion = new System.Windows.Forms.Label();
-            this.tbDistrict = new System.Windows.Forms.TextBox();
             this.lblDistrict = new System.Windows.Forms.Label();
             this.pSide = new System.Windows.Forms.Panel();
-            this.button1 = new System.Windows.Forms.Button();
+            this.btnForwardNext = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.dgvContent)).BeginInit();
             this.msBar.SuspendLayout();
             this.gbAddress.SuspendLayout();
@@ -69,6 +69,7 @@
             this.dgvContent.Size = new System.Drawing.Size(995, 458);
             this.dgvContent.TabIndex = 1;
             this.dgvContent.SelectionChanged += new System.EventHandler(this.dgvContent_SelectionChanged);
+            this.dgvContent.KeyDown += new System.Windows.Forms.KeyEventHandler(this.OnKeyDown);
             // 
             // msBar
             // 
@@ -148,6 +149,7 @@
             this.miSendToDB.Name = "miSendToDB";
             this.miSendToDB.Size = new System.Drawing.Size(180, 22);
             this.miSendToDB.Text = "Отправить в БД";
+            this.miSendToDB.Click += new System.EventHandler(this.miSendToDB_Click);
             // 
             // miSettings
             // 
@@ -157,6 +159,7 @@
             // 
             // gbAddress
             // 
+            this.gbAddress.Controls.Add(this.cbDistrict);
             this.gbAddress.Controls.Add(this.lblRowIndex);
             this.gbAddress.Controls.Add(this.lblStatus);
             this.gbAddress.Controls.Add(this.tbHouse);
@@ -167,16 +170,26 @@
             this.gbAddress.Controls.Add(this.lblCity);
             this.gbAddress.Controls.Add(this.tbRegion);
             this.gbAddress.Controls.Add(this.lblRegion);
-            this.gbAddress.Controls.Add(this.tbDistrict);
             this.gbAddress.Controls.Add(this.lblDistrict);
             this.gbAddress.Location = new System.Drawing.Point(1015, 25);
-            this.gbAddress.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.gbAddress.Margin = new System.Windows.Forms.Padding(2);
             this.gbAddress.Name = "gbAddress";
-            this.gbAddress.Padding = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.gbAddress.Padding = new System.Windows.Forms.Padding(2);
             this.gbAddress.Size = new System.Drawing.Size(226, 288);
             this.gbAddress.TabIndex = 11;
             this.gbAddress.TabStop = false;
             this.gbAddress.Text = "Адрес";
+            // 
+            // cbDistrict
+            // 
+            this.cbDistrict.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cbDistrict.FormattingEnabled = true;
+            this.cbDistrict.Location = new System.Drawing.Point(2, 97);
+            this.cbDistrict.Name = "cbDistrict";
+            this.cbDistrict.Size = new System.Drawing.Size(220, 21);
+            this.cbDistrict.TabIndex = 12;
+            this.cbDistrict.SelectedIndexChanged += new System.EventHandler(this.cbDistrict_SelectedIndexChanged);
+            this.cbDistrict.KeyDown += new System.Windows.Forms.KeyEventHandler(this.OnKeyDown);
             // 
             // lblRowIndex
             // 
@@ -201,10 +214,12 @@
             // tbHouse
             // 
             this.tbHouse.Location = new System.Drawing.Point(2, 261);
-            this.tbHouse.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.tbHouse.Margin = new System.Windows.Forms.Padding(2);
             this.tbHouse.Name = "tbHouse";
             this.tbHouse.Size = new System.Drawing.Size(220, 20);
             this.tbHouse.TabIndex = 9;
+            this.tbHouse.TextChanged += new System.EventHandler(this.OnTextChanged);
+            this.tbHouse.KeyDown += new System.Windows.Forms.KeyEventHandler(this.OnKeyDown);
             // 
             // lblHouse
             // 
@@ -220,10 +235,12 @@
             // tbStreet
             // 
             this.tbStreet.Location = new System.Drawing.Point(2, 220);
-            this.tbStreet.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.tbStreet.Margin = new System.Windows.Forms.Padding(2);
             this.tbStreet.Name = "tbStreet";
             this.tbStreet.Size = new System.Drawing.Size(220, 20);
             this.tbStreet.TabIndex = 7;
+            this.tbStreet.TextChanged += new System.EventHandler(this.OnTextChanged);
+            this.tbStreet.KeyDown += new System.Windows.Forms.KeyEventHandler(this.OnKeyDown);
             // 
             // lblStreet
             // 
@@ -239,10 +256,12 @@
             // tbCity
             // 
             this.tbCity.Location = new System.Drawing.Point(2, 180);
-            this.tbCity.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.tbCity.Margin = new System.Windows.Forms.Padding(2);
             this.tbCity.Name = "tbCity";
             this.tbCity.Size = new System.Drawing.Size(220, 20);
             this.tbCity.TabIndex = 5;
+            this.tbCity.TextChanged += new System.EventHandler(this.OnTextChanged);
+            this.tbCity.KeyDown += new System.Windows.Forms.KeyEventHandler(this.OnKeyDown);
             // 
             // lblCity
             // 
@@ -258,10 +277,12 @@
             // tbRegion
             // 
             this.tbRegion.Location = new System.Drawing.Point(2, 137);
-            this.tbRegion.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.tbRegion.Margin = new System.Windows.Forms.Padding(2);
             this.tbRegion.Name = "tbRegion";
             this.tbRegion.Size = new System.Drawing.Size(220, 20);
             this.tbRegion.TabIndex = 3;
+            this.tbRegion.TextChanged += new System.EventHandler(this.OnTextChanged);
+            this.tbRegion.KeyDown += new System.Windows.Forms.KeyEventHandler(this.OnKeyDown);
             // 
             // lblRegion
             // 
@@ -273,14 +294,6 @@
             this.lblRegion.Size = new System.Drawing.Size(53, 13);
             this.lblRegion.TabIndex = 2;
             this.lblRegion.Text = "Область:";
-            // 
-            // tbDistrict
-            // 
-            this.tbDistrict.Location = new System.Drawing.Point(2, 95);
-            this.tbDistrict.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
-            this.tbDistrict.Name = "tbDistrict";
-            this.tbDistrict.Size = new System.Drawing.Size(220, 20);
-            this.tbDistrict.TabIndex = 1;
             // 
             // lblDistrict
             // 
@@ -295,28 +308,30 @@
             // 
             // pSide
             // 
-            this.pSide.Controls.Add(this.button1);
+            this.pSide.Controls.Add(this.btnForwardNext);
             this.pSide.Enabled = false;
             this.pSide.Location = new System.Drawing.Point(1012, 26);
-            this.pSide.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.pSide.Margin = new System.Windows.Forms.Padding(2);
             this.pSide.Name = "pSide";
             this.pSide.Size = new System.Drawing.Size(236, 458);
             this.pSide.TabIndex = 13;
             // 
-            // button1
+            // btnForwardNext
             // 
-            this.button1.Location = new System.Drawing.Point(64, 430);
-            this.button1.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
-            this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(106, 23);
-            this.button1.TabIndex = 0;
-            this.button1.Text = "Перейти к след.";
-            this.button1.UseVisualStyleBackColor = true;
+            this.btnForwardNext.Location = new System.Drawing.Point(64, 430);
+            this.btnForwardNext.Margin = new System.Windows.Forms.Padding(2);
+            this.btnForwardNext.Name = "btnForwardNext";
+            this.btnForwardNext.Size = new System.Drawing.Size(106, 23);
+            this.btnForwardNext.TabIndex = 0;
+            this.btnForwardNext.Text = "Перейти к след.";
+            this.btnForwardNext.UseVisualStyleBackColor = true;
+            this.btnForwardNext.Click += new System.EventHandler(this.btnForwardNext_Click);
             // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.BackColor = System.Drawing.SystemColors.ActiveCaption;
             this.ClientSize = new System.Drawing.Size(1247, 488);
             this.Controls.Add(this.gbAddress);
             this.Controls.Add(this.pSide);
@@ -324,6 +339,8 @@
             this.Controls.Add(this.msBar);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.MainMenuStrip = this.msBar;
+            this.MaximizeBox = false;
+            this.MinimizeBox = false;
             this.Name = "MainForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Парсер адресов";
@@ -353,7 +370,6 @@
         private System.Windows.Forms.GroupBox gbAddress;
         private System.Windows.Forms.TextBox tbRegion;
         private System.Windows.Forms.Label lblRegion;
-        private System.Windows.Forms.TextBox tbDistrict;
         private System.Windows.Forms.Label lblDistrict;
         private System.Windows.Forms.TextBox tbHouse;
         private System.Windows.Forms.Label lblHouse;
@@ -363,9 +379,10 @@
         private System.Windows.Forms.Label lblCity;
         private System.Windows.Forms.Label lblStatus;
         private System.Windows.Forms.Panel pSide;
-        private System.Windows.Forms.Button button1;
+        private System.Windows.Forms.Button btnForwardNext;
         private System.Windows.Forms.ToolStripMenuItem miClose;
         private System.Windows.Forms.Label lblRowIndex;
+        private System.Windows.Forms.ComboBox cbDistrict;
     }
 }
 

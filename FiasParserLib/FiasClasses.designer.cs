@@ -45,9 +45,11 @@ namespace FiasParserLib
     partial void InsertDistrict(District instance);
     partial void UpdateDistrict(District instance);
     partial void DeleteDistrict(District instance);
+    partial void InsertDimShops(DimShops instance);
+    partial void UpdateDimShops(DimShops instance);
+    partial void DeleteDimShops(DimShops instance);
     #endregion
 		
-	
 		public FiasClassesDataContext(string connection) : 
 				base(connection, mappingSource)
 		{
@@ -109,6 +111,14 @@ namespace FiasParserLib
 			get
 			{
 				return this.GetTable<District>();
+			}
+		}
+		
+		public System.Data.Linq.Table<DimShops> DimShops
+		{
+			get
+			{
+				return this.GetTable<DimShops>();
 			}
 		}
 	}
@@ -2366,6 +2376,212 @@ namespace FiasParserLib
 					this._District1 = value;
 					this.SendPropertyChanged("District1");
 					this.OnDistrict1Changed();
+				}
+			}
+		}
+		
+		public event PropertyChangingEventHandler PropertyChanging;
+		
+		public event PropertyChangedEventHandler PropertyChanged;
+		
+		protected virtual void SendPropertyChanging()
+		{
+			if ((this.PropertyChanging != null))
+			{
+				this.PropertyChanging(this, emptyChangingEventArgs);
+			}
+		}
+		
+		protected virtual void SendPropertyChanged(String propertyName)
+		{
+			if ((this.PropertyChanged != null))
+			{
+				this.PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
+			}
+		}
+	}
+	
+	[global::System.Data.Linq.Mapping.TableAttribute(Name="dbo.DimShops")]
+	public partial class DimShops : INotifyPropertyChanging, INotifyPropertyChanged
+	{
+		
+		private static PropertyChangingEventArgs emptyChangingEventArgs = new PropertyChangingEventArgs(String.Empty);
+		
+		private string _ChainName;
+		
+		private string _ShopCode;
+		
+		private string _District;
+		
+		private string _Region;
+		
+		private string _City;
+		
+		private string _Street;
+		
+		private string _House;
+		
+    #region Определения метода расширяемости
+    partial void OnLoaded();
+    partial void OnValidate(System.Data.Linq.ChangeAction action);
+    partial void OnCreated();
+    partial void OnChainNameChanging(string value);
+    partial void OnChainNameChanged();
+    partial void OnShopCodeChanging(string value);
+    partial void OnShopCodeChanged();
+    partial void OnDistrictChanging(string value);
+    partial void OnDistrictChanged();
+    partial void OnRegionChanging(string value);
+    partial void OnRegionChanged();
+    partial void OnCityChanging(string value);
+    partial void OnCityChanged();
+    partial void OnStreetChanging(string value);
+    partial void OnStreetChanged();
+    partial void OnHouseChanging(string value);
+    partial void OnHouseChanged();
+    #endregion
+		
+		public DimShops()
+		{
+			OnCreated();
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_ChainName", DbType="NVarChar(50) NOT NULL", CanBeNull=false, IsPrimaryKey=true)]
+		public string ChainName
+		{
+			get
+			{
+				return this._ChainName;
+			}
+			set
+			{
+				if ((this._ChainName != value))
+				{
+					this.OnChainNameChanging(value);
+					this.SendPropertyChanging();
+					this._ChainName = value;
+					this.SendPropertyChanged("ChainName");
+					this.OnChainNameChanged();
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_ShopCode", DbType="NVarChar(50) NOT NULL", CanBeNull=false)]
+		public string ShopCode
+		{
+			get
+			{
+				return this._ShopCode;
+			}
+			set
+			{
+				if ((this._ShopCode != value))
+				{
+					this.OnShopCodeChanging(value);
+					this.SendPropertyChanging();
+					this._ShopCode = value;
+					this.SendPropertyChanged("ShopCode");
+					this.OnShopCodeChanged();
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_District", DbType="NVarChar(50)")]
+		public string District
+		{
+			get
+			{
+				return this._District;
+			}
+			set
+			{
+				if ((this._District != value))
+				{
+					this.OnDistrictChanging(value);
+					this.SendPropertyChanging();
+					this._District = value;
+					this.SendPropertyChanged("District");
+					this.OnDistrictChanged();
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_Region", DbType="NVarChar(50)")]
+		public string Region
+		{
+			get
+			{
+				return this._Region;
+			}
+			set
+			{
+				if ((this._Region != value))
+				{
+					this.OnRegionChanging(value);
+					this.SendPropertyChanging();
+					this._Region = value;
+					this.SendPropertyChanged("Region");
+					this.OnRegionChanged();
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_City", DbType="NVarChar(50)")]
+		public string City
+		{
+			get
+			{
+				return this._City;
+			}
+			set
+			{
+				if ((this._City != value))
+				{
+					this.OnCityChanging(value);
+					this.SendPropertyChanging();
+					this._City = value;
+					this.SendPropertyChanged("City");
+					this.OnCityChanged();
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_Street", DbType="NVarChar(50)")]
+		public string Street
+		{
+			get
+			{
+				return this._Street;
+			}
+			set
+			{
+				if ((this._Street != value))
+				{
+					this.OnStreetChanging(value);
+					this.SendPropertyChanging();
+					this._Street = value;
+					this.SendPropertyChanged("Street");
+					this.OnStreetChanged();
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_House", DbType="NVarChar(50)")]
+		public string House
+		{
+			get
+			{
+				return this._House;
+			}
+			set
+			{
+				if ((this._House != value))
+				{
+					this.OnHouseChanging(value);
+					this.SendPropertyChanging();
+					this._House = value;
+					this.SendPropertyChanged("House");
+					this.OnHouseChanged();
 				}
 			}
 		}

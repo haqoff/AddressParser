@@ -119,6 +119,9 @@ namespace FiasParserGUI
                     {
                         var lastNode = parsed[0];
 
+                        parser.MakeActualHierarchy(lastNode);
+
+                        ObjectNode region  = null;
                         while (lastNode != null)
                         {
                             sb.Clear();
@@ -131,7 +134,11 @@ namespace FiasParserGUI
                             var name = sb.ToString();
 
                             //регион
-                            if (lastNode.AOLevel > 0 && lastNode.AOLevel < 3) dgv[MainForm.REGION_FIELD, i].Value = name;
+                            if (lastNode.AOLevel > 0 && lastNode.AOLevel < 3)
+                            {
+                                dgv[MainForm.REGION_FIELD, i].Value = name;
+                                region = lastNode;
+                            }
                             //город
                             else if (lastNode.AOLevel == 4 || lastNode.AOLevel == 6) dgv[MainForm.CITY_FIELD, i].Value = name;
                             //улица
@@ -142,9 +149,9 @@ namespace FiasParserGUI
                             lastNode = lastNode.Parent;
                         }
 
-                        if (!string.IsNullOrEmpty(dgv[MainForm.REGION_FIELD, i].Value?.ToString()))
+                        if (region!=null)
                         {
-                            dgv[MainForm.DISTRICT_FIELD, i].Value = parser.GetDistrictByRegion(dgv[MainForm.REGION_FIELD, i].Value.ToString());
+                            dgv[MainForm.DISTRICT_FIELD, i].Value = parser.GetDistrictByRegion(region.Name);
                         }
 
                         if (!string.IsNullOrEmpty(dgv[MainForm.REGION_FIELD, i].Value?.ToString())

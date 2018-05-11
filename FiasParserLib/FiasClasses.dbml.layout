@@ -32,5 +32,11 @@
         <elementListCompartment Id="6e1b0344-6dd3-4404-bf80-6754ef555f7c" absoluteBounds="9.015, 2.835, 1.9700000000000002, 0.63399251302083326" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
+    <classShape Id="107f6815-4e55-4627-9fe1-2108767a7381" absoluteBounds="7.625, 5.125, 2, 2.1554996744791666">
+      <DataClassMoniker Name="/FiasClassesDataContext/DimShops" />
+      <nestedChildShapes>
+        <elementListCompartment Id="5943df02-028c-4cf6-a206-ce1fa9e72f05" absoluteBounds="7.64, 5.585, 1.9700000000000002, 1.5954996744791665" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+      </nestedChildShapes>
+    </classShape>
   </nestedChildShapes>
 </ordesignerObjectsDiagram>

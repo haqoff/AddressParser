@@ -11,7 +11,7 @@ namespace FiasParserLib
 {
     public class FiasParser
     {
-        private FiasClassesDataContext dataContext;
+        public FiasClassesDataContext DataContext { get; private set; }
         private AddressParser parser;
         private AOTypeDictionary dictionary;
         private StringBuilder sb;
@@ -20,9 +20,9 @@ namespace FiasParserLib
 
         public FiasParser(string connectionString)
         {
-            dataContext = new FiasClassesDataContext(connectionString);
-            dataContext.CommandTimeout = 0;
-            if (!dataContext.DatabaseExists()) throw new BadLoginException("Не удалось подключиться к БД.");
+            DataContext = new FiasClassesDataContext(connectionString);
+            DataContext.CommandTimeout = 0;
+            if (!DataContext.DatabaseExists()) throw new BadLoginException("Не удалось подключиться к БД.");
 
             bannedAbbriviatedNames = new List<string>();
             bannedAbbriviatedNames.Add("к.");
@@ -63,7 +63,12 @@ namespace FiasParserLib
                     }
                     else
                     {
-                        lastFindedNodes = IterateAddressObject(versionObj, lastFindedNodes);
+                        var f = IterateAddressObject(versionObj, lastFindedNodes);
+                        if (f.Count > 0) lastFindedNodes = f;
+                        else
+                        {
+                            break;
+                        }
                     }
                 }
 
@@ -98,14 +103,14 @@ namespace FiasParserLib
 
                 if (house.Type?.AbbreviatedName == "дом с корпусом" && housing.Length > 0)
                 {
-                    var qWithLitter = (from h in dataContext.House
+                    var qWithLitter = (from h in DataContext.House
                                        where h.HOUSENUM == nameWithoutHousing && h.AOGUID == obj.Guid && h.BUILDNUM == housing && h.STRUCNUM == null
                                        select new ObjectNode(h.HOUSEGUID, nameWithoutHousing + ", корпус " + housing, TableType.House, obj.Guid,obj)).ToList().Distinct();
                     houseGuids.AddRange(qWithLitter);
 
                     if (houseGuids.Count == 0)
                     {
-                        var qWithLitter2 = (from h in dataContext.House
+                        var qWithLitter2 = (from h in DataContext.House
                                             where h.HOUSENUM == nameWithoutHousing && h.AOGUID == obj.Guid && h.BUILDNUM == housing
                                             select new ObjectNode(h.HOUSEGUID, nameWithoutHousing + ", корпус " + housing, TableType.House, obj.Guid,obj)).ToList().Distinct();
                         houseGuids.AddRange(qWithLitter2);
@@ -114,7 +119,7 @@ namespace FiasParserLib
 
                 if (houseGuids.Count == 0)
                 {
-                    var qWithLitter = (from h in dataContext.House
+                    var qWithLitter = (from h in DataContext.House
                                        where h.HOUSENUM == house.Name && h.AOGUID == obj.Guid && h.STRUCNUM == null && h.BUILDNUM == null
                                        select new ObjectNode(h.HOUSEGUID, house.Name, TableType.House, obj.Guid,obj)).ToList().Distinct();
                     houseGuids.AddRange(qWithLitter);
@@ -123,7 +128,7 @@ namespace FiasParserLib
                 if (houseGuids.Count == 0 && housing.Length > 0)
                 {
 
-                    var qWithNumericHousing = (from h in dataContext.House
+                    var qWithNumericHousing = (from h in DataContext.House
                                                where h.HOUSENUM == nameWithoutHousing && h.AOGUID == obj.Guid && (h.BUILDNUM == housing || h.STRUCNUM == housing)
                                                select new ObjectNode(h.HOUSEGUID, house.Name, TableType.House, obj.Guid, obj)).ToList().Distinct();
                     houseGuids.AddRange(qWithNumericHousing);
@@ -131,7 +136,7 @@ namespace FiasParserLib
                 }
                 if (houseGuids.Count == 0)
                 {
-                    var q = (from h in dataContext.House
+                    var q = (from h in DataContext.House
                              where h.HOUSENUM == house.Name && h.AOGUID == obj.Guid
                              select new ObjectNode(h.HOUSEGUID, house.Name, TableType.House, obj.Guid, obj)).ToList().Distinct();
                     houseGuids.AddRange(q);
@@ -146,7 +151,7 @@ namespace FiasParserLib
 
             foreach (var house in houses)
             {
-                var q = (from r in dataContext.Room
+                var q = (from r in DataContext.Room
                          where r.FLATNUMBER == room.Name && r.HOUSEGUID == house.Guid
                          select new ObjectNode(r.ROOMGUID, room.Name, TableType.Room, house.Guid,house)).ToList().Distinct();
 
@@ -164,7 +169,7 @@ namespace FiasParserLib
             {
                 foreach (var prevNode in prevNodes)
                 {
-                    var query = (from obj in dataContext.Object
+                    var query = (from obj in DataContext.Object
                                  where obj.FORMALNAME == variantObj.Name && obj.PARENTGUID == prevNode.Guid && obj.ACTSTATUS == 1 && obj.AOLEVEL >= prevNode.AOLevel
                                  select new ObjectNode(obj.AOGUID, variantObj.Name, TableType.Object, prevNode.Guid,prevNode, obj.SHORTNAME ,obj.AOLEVEL)).ToList();
 
@@ -172,7 +177,7 @@ namespace FiasParserLib
 
                     if (query.Count == 0 && !retrying)
                     {
-                        var allQ = (from obj in dataContext.Object
+                        var allQ = (from obj in DataContext.Object
                                     where obj.PARENTGUID == prevNode.Guid && obj.ACTSTATUS == 1
                                     select new ObjectNode(obj.AOGUID, obj.FORMALNAME, TableType.Object, prevNode.Guid,prevNode, obj.SHORTNAME, obj.AOLEVEL)).ToList();
 
@@ -196,7 +201,7 @@ namespace FiasParserLib
             }
             else if (prevNodes == null)
             {
-                var firstQuery = (from obj in dataContext.Object
+                var firstQuery = (from obj in DataContext.Object
                                   where obj.FORMALNAME == variantObj.Name && obj.ACTSTATUS == 1
                                   select new ObjectNode(obj.AOGUID, variantObj.Name, TableType.Object, obj.PARENTGUID, null, obj.SHORTNAME, obj.AOLEVEL)).ToList();
                 result = firstQuery;
@@ -248,12 +253,26 @@ namespace FiasParserLib
             return result;
         }
 
-        public ObjectNode GetActualHierarchy(ObjectNode node)
+        public void MakeActualHierarchy(ObjectNode node)
         {
-            ObjectNode res = null;
-            if (node == null) return null;
+            if (node == null) return;
 
+            ObjectNode current = node;
 
+            while(current.Parent!=null)
+            {
+                current = current.Parent;
+            }
+
+            if (!string.IsNullOrEmpty(current.ParentGuid) && current.AOLevel!=1)
+            {
+                var allQ = (from obj in DataContext.Object
+                            where obj.AOGUID == current.ParentGuid && obj.ACTSTATUS == 1
+                            select new ObjectNode(current.ParentGuid, obj.FORMALNAME, TableType.Object, obj.PARENTGUID, null, obj.SHORTNAME, obj.AOLEVEL)).FirstOrDefault();
+
+                current.Parent = allQ;
+                if (!string.IsNullOrEmpty(allQ.ParentGuid) && allQ.AOLevel != 1) MakeActualHierarchy(allQ);
+            }
         }
 
 
@@ -261,7 +280,7 @@ namespace FiasParserLib
         {
             var dictionary = new AOTypeDictionary();
 
-            foreach (var type in dataContext.AddressObjectType)
+            foreach (var type in DataContext.AddressObjectType)
             {
                 if (!string.IsNullOrEmpty(type.SCNAME) && !bannedAbbriviatedNames.Contains(type.SCNAME))
                     dictionary.Add(new AddressSplitterLib.AddressObjectType(type.SOCRNAME, type.SCNAME, type.LEVEL));
@@ -273,7 +292,8 @@ namespace FiasParserLib
 
         public string GetDistrictByRegion(string regionName)
         {
-            var q = (from d in dataContext.District
+            var q = (from d in DataContext.District
+                     where d.Region == regionName
                      select d.District1).FirstOrDefault();
 
             return q;
@@ -284,7 +304,7 @@ namespace FiasParserLib
         {
             try
             {
-                dataContext.Connection.Close();
+                DataContext.Connection.Close();
             }
             catch
             {
