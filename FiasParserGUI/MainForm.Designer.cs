@@ -40,20 +40,21 @@
             this.miSendToDB = new System.Windows.Forms.ToolStripMenuItem();
             this.miSettings = new System.Windows.Forms.ToolStripMenuItem();
             this.gbAddress = new System.Windows.Forms.GroupBox();
-            this.cbDistrict = new System.Windows.Forms.ComboBox();
+            this.cbHouse = new System.Windows.Forms.ComboBox();
+            this.cbStreet = new System.Windows.Forms.ComboBox();
+            this.cbCity = new System.Windows.Forms.ComboBox();
+            this.cbRegion = new System.Windows.Forms.ComboBox();
+            this.tbDistrict = new System.Windows.Forms.TextBox();
             this.lblRowIndex = new System.Windows.Forms.Label();
             this.lblStatus = new System.Windows.Forms.Label();
-            this.tbHouse = new System.Windows.Forms.TextBox();
             this.lblHouse = new System.Windows.Forms.Label();
-            this.tbStreet = new System.Windows.Forms.TextBox();
             this.lblStreet = new System.Windows.Forms.Label();
-            this.tbCity = new System.Windows.Forms.TextBox();
             this.lblCity = new System.Windows.Forms.Label();
-            this.tbRegion = new System.Windows.Forms.TextBox();
             this.lblRegion = new System.Windows.Forms.Label();
             this.lblDistrict = new System.Windows.Forms.Label();
             this.pSide = new System.Windows.Forms.Panel();
             this.btnForwardNext = new System.Windows.Forms.Button();
+            this.lblLoading = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.dgvContent)).BeginInit();
             this.msBar.SuspendLayout();
             this.gbAddress.SuspendLayout();
@@ -159,16 +160,17 @@
             // 
             // gbAddress
             // 
-            this.gbAddress.Controls.Add(this.cbDistrict);
+            this.gbAddress.Controls.Add(this.lblLoading);
+            this.gbAddress.Controls.Add(this.cbHouse);
+            this.gbAddress.Controls.Add(this.cbStreet);
+            this.gbAddress.Controls.Add(this.cbCity);
+            this.gbAddress.Controls.Add(this.cbRegion);
+            this.gbAddress.Controls.Add(this.tbDistrict);
             this.gbAddress.Controls.Add(this.lblRowIndex);
             this.gbAddress.Controls.Add(this.lblStatus);
-            this.gbAddress.Controls.Add(this.tbHouse);
             this.gbAddress.Controls.Add(this.lblHouse);
-            this.gbAddress.Controls.Add(this.tbStreet);
             this.gbAddress.Controls.Add(this.lblStreet);
-            this.gbAddress.Controls.Add(this.tbCity);
             this.gbAddress.Controls.Add(this.lblCity);
-            this.gbAddress.Controls.Add(this.tbRegion);
             this.gbAddress.Controls.Add(this.lblRegion);
             this.gbAddress.Controls.Add(this.lblDistrict);
             this.gbAddress.Location = new System.Drawing.Point(1015, 25);
@@ -180,16 +182,62 @@
             this.gbAddress.TabStop = false;
             this.gbAddress.Text = "Адрес";
             // 
-            // cbDistrict
+            // cbHouse
             // 
-            this.cbDistrict.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.cbDistrict.FormattingEnabled = true;
-            this.cbDistrict.Location = new System.Drawing.Point(2, 97);
-            this.cbDistrict.Name = "cbDistrict";
-            this.cbDistrict.Size = new System.Drawing.Size(220, 21);
-            this.cbDistrict.TabIndex = 12;
-            this.cbDistrict.SelectedIndexChanged += new System.EventHandler(this.cbDistrict_SelectedIndexChanged);
-            this.cbDistrict.KeyDown += new System.Windows.Forms.KeyEventHandler(this.OnKeyDown);
+            this.cbHouse.FormattingEnabled = true;
+            this.cbHouse.Location = new System.Drawing.Point(1, 261);
+            this.cbHouse.Name = "cbHouse";
+            this.cbHouse.Size = new System.Drawing.Size(220, 21);
+            this.cbHouse.Sorted = true;
+            this.cbHouse.TabIndex = 17;
+            this.cbHouse.TextChanged += new System.EventHandler(this.OnTextChanged);
+            this.cbHouse.KeyDown += new System.Windows.Forms.KeyEventHandler(this.OnKeyDown);
+            // 
+            // cbStreet
+            // 
+            this.cbStreet.FormattingEnabled = true;
+            this.cbStreet.Location = new System.Drawing.Point(0, 220);
+            this.cbStreet.Name = "cbStreet";
+            this.cbStreet.Size = new System.Drawing.Size(221, 21);
+            this.cbStreet.Sorted = true;
+            this.cbStreet.TabIndex = 16;
+            this.cbStreet.SelectedIndexChanged += new System.EventHandler(this.cbStreet_SelectedIndexChanged);
+            this.cbStreet.TextChanged += new System.EventHandler(this.OnTextChanged);
+            this.cbStreet.KeyDown += new System.Windows.Forms.KeyEventHandler(this.OnKeyDown);
+            // 
+            // cbCity
+            // 
+            this.cbCity.FormattingEnabled = true;
+            this.cbCity.Location = new System.Drawing.Point(0, 180);
+            this.cbCity.Name = "cbCity";
+            this.cbCity.Size = new System.Drawing.Size(221, 21);
+            this.cbCity.Sorted = true;
+            this.cbCity.TabIndex = 15;
+            this.cbCity.SelectedIndexChanged += new System.EventHandler(this.cbCity_SelectedIndexChanged);
+            this.cbCity.TextChanged += new System.EventHandler(this.OnTextChanged);
+            this.cbCity.KeyDown += new System.Windows.Forms.KeyEventHandler(this.OnKeyDown);
+            // 
+            // cbRegion
+            // 
+            this.cbRegion.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cbRegion.FormattingEnabled = true;
+            this.cbRegion.Location = new System.Drawing.Point(0, 137);
+            this.cbRegion.Name = "cbRegion";
+            this.cbRegion.Size = new System.Drawing.Size(221, 21);
+            this.cbRegion.Sorted = true;
+            this.cbRegion.TabIndex = 14;
+            this.cbRegion.SelectedIndexChanged += new System.EventHandler(this.cbRegion_SelectedIndexChanged);
+            this.cbRegion.TextChanged += new System.EventHandler(this.OnTextChanged);
+            this.cbRegion.KeyDown += new System.Windows.Forms.KeyEventHandler(this.OnKeyDown);
+            // 
+            // tbDistrict
+            // 
+            this.tbDistrict.Location = new System.Drawing.Point(0, 98);
+            this.tbDistrict.Name = "tbDistrict";
+            this.tbDistrict.ReadOnly = true;
+            this.tbDistrict.Size = new System.Drawing.Size(220, 20);
+            this.tbDistrict.TabIndex = 13;
+            this.tbDistrict.TextChanged += new System.EventHandler(this.OnTextChanged);
             // 
             // lblRowIndex
             // 
@@ -211,16 +259,6 @@
             this.lblStatus.TabIndex = 10;
             this.lblStatus.Text = "Статус:";
             // 
-            // tbHouse
-            // 
-            this.tbHouse.Location = new System.Drawing.Point(2, 261);
-            this.tbHouse.Margin = new System.Windows.Forms.Padding(2);
-            this.tbHouse.Name = "tbHouse";
-            this.tbHouse.Size = new System.Drawing.Size(220, 20);
-            this.tbHouse.TabIndex = 9;
-            this.tbHouse.TextChanged += new System.EventHandler(this.OnTextChanged);
-            this.tbHouse.KeyDown += new System.Windows.Forms.KeyEventHandler(this.OnKeyDown);
-            // 
             // lblHouse
             // 
             this.lblHouse.AutoSize = true;
@@ -231,16 +269,6 @@
             this.lblHouse.Size = new System.Drawing.Size(33, 13);
             this.lblHouse.TabIndex = 8;
             this.lblHouse.Text = "Дом:";
-            // 
-            // tbStreet
-            // 
-            this.tbStreet.Location = new System.Drawing.Point(2, 220);
-            this.tbStreet.Margin = new System.Windows.Forms.Padding(2);
-            this.tbStreet.Name = "tbStreet";
-            this.tbStreet.Size = new System.Drawing.Size(220, 20);
-            this.tbStreet.TabIndex = 7;
-            this.tbStreet.TextChanged += new System.EventHandler(this.OnTextChanged);
-            this.tbStreet.KeyDown += new System.Windows.Forms.KeyEventHandler(this.OnKeyDown);
             // 
             // lblStreet
             // 
@@ -253,16 +281,6 @@
             this.lblStreet.TabIndex = 6;
             this.lblStreet.Text = "Улица:";
             // 
-            // tbCity
-            // 
-            this.tbCity.Location = new System.Drawing.Point(2, 180);
-            this.tbCity.Margin = new System.Windows.Forms.Padding(2);
-            this.tbCity.Name = "tbCity";
-            this.tbCity.Size = new System.Drawing.Size(220, 20);
-            this.tbCity.TabIndex = 5;
-            this.tbCity.TextChanged += new System.EventHandler(this.OnTextChanged);
-            this.tbCity.KeyDown += new System.Windows.Forms.KeyEventHandler(this.OnKeyDown);
-            // 
             // lblCity
             // 
             this.lblCity.AutoSize = true;
@@ -273,16 +291,6 @@
             this.lblCity.Size = new System.Drawing.Size(105, 13);
             this.lblCity.TabIndex = 4;
             this.lblCity.Text = "Населённый пункт:";
-            // 
-            // tbRegion
-            // 
-            this.tbRegion.Location = new System.Drawing.Point(2, 137);
-            this.tbRegion.Margin = new System.Windows.Forms.Padding(2);
-            this.tbRegion.Name = "tbRegion";
-            this.tbRegion.Size = new System.Drawing.Size(220, 20);
-            this.tbRegion.TabIndex = 3;
-            this.tbRegion.TextChanged += new System.EventHandler(this.OnTextChanged);
-            this.tbRegion.KeyDown += new System.Windows.Forms.KeyEventHandler(this.OnKeyDown);
             // 
             // lblRegion
             // 
@@ -327,6 +335,16 @@
             this.btnForwardNext.UseVisualStyleBackColor = true;
             this.btnForwardNext.Click += new System.EventHandler(this.btnForwardNext_Click);
             // 
+            // lblLoading
+            // 
+            this.lblLoading.Font = new System.Drawing.Font("Microsoft Sans Serif", 6.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.lblLoading.Location = new System.Drawing.Point(5, 15);
+            this.lblLoading.Name = "lblLoading";
+            this.lblLoading.Size = new System.Drawing.Size(215, 20);
+            this.lblLoading.TabIndex = 18;
+            this.lblLoading.Text = "---";
+            this.lblLoading.TextAlign = System.Drawing.ContentAlignment.TopCenter;
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -368,21 +386,22 @@
         private System.Windows.Forms.ToolStripMenuItem miSendToDB;
         private System.Windows.Forms.ToolStripMenuItem miSettings;
         private System.Windows.Forms.GroupBox gbAddress;
-        private System.Windows.Forms.TextBox tbRegion;
         private System.Windows.Forms.Label lblRegion;
         private System.Windows.Forms.Label lblDistrict;
-        private System.Windows.Forms.TextBox tbHouse;
         private System.Windows.Forms.Label lblHouse;
-        private System.Windows.Forms.TextBox tbStreet;
         private System.Windows.Forms.Label lblStreet;
-        private System.Windows.Forms.TextBox tbCity;
         private System.Windows.Forms.Label lblCity;
         private System.Windows.Forms.Label lblStatus;
         private System.Windows.Forms.Panel pSide;
         private System.Windows.Forms.Button btnForwardNext;
         private System.Windows.Forms.ToolStripMenuItem miClose;
         private System.Windows.Forms.Label lblRowIndex;
-        private System.Windows.Forms.ComboBox cbDistrict;
+        private System.Windows.Forms.TextBox tbDistrict;
+        private System.Windows.Forms.ComboBox cbRegion;
+        private System.Windows.Forms.ComboBox cbHouse;
+        private System.Windows.Forms.ComboBox cbStreet;
+        private System.Windows.Forms.ComboBox cbCity;
+        private System.Windows.Forms.Label lblLoading;
     }
 }
 

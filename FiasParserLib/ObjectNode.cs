@@ -1,4 +1,7 @@
-﻿namespace FiasParserLib
+﻿using System.Collections;
+using System.Collections.Generic;
+
+namespace FiasParserLib
 {
     public class ObjectNode
     {
@@ -11,14 +14,14 @@
         public TableType Type { get; private set; }
 
 
-        public ObjectNode(string guid, string name, TableType type, string parentGuid ,ObjectNode parent, string shortNameType, int aoLevel)
-            : this(guid, name, type, parentGuid,parent)
+        public ObjectNode(string guid, string name, TableType type, string parentGuid, ObjectNode parent, string shortNameType, int aoLevel)
+            : this(guid, name, type, parentGuid, parent)
         {
             ShortNameType = shortNameType;
             AOLevel = aoLevel;
         }
 
-        public ObjectNode(string guid, string name, TableType type, string parentGuid , ObjectNode parent)
+        public ObjectNode(string guid, string name, TableType type, string parentGuid, ObjectNode parent)
         {
             Guid = guid;
             Name = name;
@@ -39,10 +42,31 @@
 
         public override int GetHashCode()
         {
-            int result = Guid.GetHashCode() + Name.GetHashCode() + AOLevel.GetHashCode() + Type.GetHashCode();
+            int result = Guid.GetHashCode() + AOLevel.GetHashCode() + Type.GetHashCode();
+            if (Name != null) result += Name.GetHashCode();
             if (ShortNameType != null) result += ShortNameType.GetHashCode();
             if (Parent != null) result += Parent.GetHashCode();
             return result;
+        }
+
+        public class ByNameComparer : IEqualityComparer<ObjectNode>
+        {
+            public bool Equals(ObjectNode x, ObjectNode y)
+            {
+                if (x.ToString() == y.ToString()) return true;
+                return false;
+            }
+
+            public int GetHashCode(ObjectNode obj)
+            {
+                return obj.ToString().GetHashCode();
+            }
+        }
+
+        public override string ToString()
+        {
+            if (Type == TableType.Object) return ShortNameType + " " + Name;
+            return Name;
         }
 
         private enum Status
