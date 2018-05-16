@@ -328,6 +328,14 @@ namespace FiasParserGUI
             {
                 parser.Close();
             }
+            try
+            {
+                Application.Exit();
+            }
+            catch
+            {
+
+            }
         }
 
         private void miSaveAs_Click(object sender, EventArgs e)
@@ -437,7 +445,7 @@ namespace FiasParserGUI
 
         private void OnTextChanged(object sender, EventArgs e)
         {
-            if (dgvContent.SelectedCells.Count > 0)
+            if (CheckTableForParsedData(dgvContent)&&dgvContent.SelectedCells.Count > 0)
             {
                 int rowIndex = dgvContent.SelectedCells[0].RowIndex;
 
@@ -647,5 +655,3 @@ namespace FiasParserGUI
         }
     }
 }
-
-

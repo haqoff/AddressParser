@@ -40,6 +40,7 @@
             this.miSendToDB = new System.Windows.Forms.ToolStripMenuItem();
             this.miSettings = new System.Windows.Forms.ToolStripMenuItem();
             this.gbAddress = new System.Windows.Forms.GroupBox();
+            this.lblLoading = new System.Windows.Forms.Label();
             this.cbHouse = new System.Windows.Forms.ComboBox();
             this.cbStreet = new System.Windows.Forms.ComboBox();
             this.cbCity = new System.Windows.Forms.ComboBox();
@@ -54,7 +55,6 @@
             this.lblDistrict = new System.Windows.Forms.Label();
             this.pSide = new System.Windows.Forms.Panel();
             this.btnForwardNext = new System.Windows.Forms.Button();
-            this.lblLoading = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.dgvContent)).BeginInit();
             this.msBar.SuspendLayout();
             this.gbAddress.SuspendLayout();
@@ -182,8 +182,20 @@
             this.gbAddress.TabStop = false;
             this.gbAddress.Text = "Адрес";
             // 
+            // lblLoading
+            // 
+            this.lblLoading.Font = new System.Drawing.Font("Microsoft Sans Serif", 6.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.lblLoading.Location = new System.Drawing.Point(5, 15);
+            this.lblLoading.Name = "lblLoading";
+            this.lblLoading.Size = new System.Drawing.Size(215, 20);
+            this.lblLoading.TabIndex = 18;
+            this.lblLoading.Text = "---";
+            this.lblLoading.TextAlign = System.Drawing.ContentAlignment.TopCenter;
+            // 
             // cbHouse
             // 
+            this.cbHouse.AutoCompleteMode = System.Windows.Forms.AutoCompleteMode.SuggestAppend;
+            this.cbHouse.AutoCompleteSource = System.Windows.Forms.AutoCompleteSource.ListItems;
             this.cbHouse.FormattingEnabled = true;
             this.cbHouse.Location = new System.Drawing.Point(1, 261);
             this.cbHouse.Name = "cbHouse";
@@ -195,6 +207,8 @@
             // 
             // cbStreet
             // 
+            this.cbStreet.AutoCompleteMode = System.Windows.Forms.AutoCompleteMode.SuggestAppend;
+            this.cbStreet.AutoCompleteSource = System.Windows.Forms.AutoCompleteSource.ListItems;
             this.cbStreet.FormattingEnabled = true;
             this.cbStreet.Location = new System.Drawing.Point(0, 220);
             this.cbStreet.Name = "cbStreet";
@@ -207,6 +221,8 @@
             // 
             // cbCity
             // 
+            this.cbCity.AutoCompleteMode = System.Windows.Forms.AutoCompleteMode.SuggestAppend;
+            this.cbCity.AutoCompleteSource = System.Windows.Forms.AutoCompleteSource.ListItems;
             this.cbCity.FormattingEnabled = true;
             this.cbCity.Location = new System.Drawing.Point(0, 180);
             this.cbCity.Name = "cbCity";
@@ -334,16 +350,6 @@
             this.btnForwardNext.Text = "Перейти к след.";
             this.btnForwardNext.UseVisualStyleBackColor = true;
             this.btnForwardNext.Click += new System.EventHandler(this.btnForwardNext_Click);
-            // 
-            // lblLoading
-            // 
-            this.lblLoading.Font = new System.Drawing.Font("Microsoft Sans Serif", 6.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.lblLoading.Location = new System.Drawing.Point(5, 15);
-            this.lblLoading.Name = "lblLoading";
-            this.lblLoading.Size = new System.Drawing.Size(215, 20);
-            this.lblLoading.TabIndex = 18;
-            this.lblLoading.Text = "---";
-            this.lblLoading.TextAlign = System.Drawing.ContentAlignment.TopCenter;
             // 
             // MainForm
             // 
