@@ -1,5 +1,6 @@
 ﻿using FiasParserLib;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -17,6 +18,8 @@ namespace FiasParserGUI
         private bool fileOpened;
         private string openedFilePath;
         private bool hasUnsavedChanges;
+        private Dictionary<string, string> districts;
+        private ConcurrentQueue<Thread> threads;
 
 
         public const string DISTRICT_FIELD = "Округ";
@@ -43,6 +46,12 @@ namespace FiasParserGUI
             dgvContent.AllowUserToOrderColumns = false;
             dgvContent.RowHeadersWidth = 70;
 
+            threads = new ConcurrentQueue<Thread>();
+            districts = new Dictionary<string, string>();
+            foreach (var item in parser.DataContext.District)
+            {
+                districts.Add(item.Region, item.District1);
+            }
 
             foreach (var o in GetObjectsByParent(null))
             {
@@ -55,24 +64,26 @@ namespace FiasParserGUI
 
         private void Save(DataGridView dgv, string path)
         {
-            dgv.MultiSelect = true;
-            // Copy DataGridView results to clipboard
-            dgv.SelectAll();
-            DataObject dataObj = dgvContent.GetClipboardContent();
-            if (dataObj != null)
-                Clipboard.SetDataObject(dataObj);
-
-            object misValue = System.Reflection.Missing.Value;
-            Excel.Application xlexcel = new Excel.Application
+            try
             {
-                DisplayAlerts = false // Without this you will get two confirm overwrite prompts
-            };
-            Excel.Workbook xlWorkBook = xlexcel.Workbooks.Add(misValue);
-            Excel.Worksheet xlWorkSheet = (Excel.Worksheet)xlWorkBook.Worksheets.get_Item(1);
+                dgv.MultiSelect = true;
+                // Copy DataGridView results to clipboard
+                dgv.SelectAll();
+                DataObject dataObj = dgvContent.GetClipboardContent();
+                if (dataObj != null)
+                    Clipboard.SetDataObject(dataObj);
 
-            // Format column as text before pasting results, this was required for my data
-            var rangeColumnsNames = new string[]
-            {
+                object misValue = System.Reflection.Missing.Value;
+                Excel.Application xlexcel = new Excel.Application
+                {
+                    DisplayAlerts = false // Without this you will get two confirm overwrite prompts
+                };
+                Excel.Workbook xlWorkBook = xlexcel.Workbooks.Add(misValue);
+                Excel.Worksheet xlWorkSheet = (Excel.Worksheet)xlWorkBook.Worksheets.get_Item(1);
+
+                // Format column as text before pasting results, this was required for my data
+                var rangeColumnsNames = new string[]
+                {
                     "A:A",
                     "B:B",
                     "C:C",
@@ -99,43 +110,49 @@ namespace FiasParserGUI
                     "X:X",
                     "Y:Y",
                     "Z:Z"
-            };
-            Excel.Range rng = xlWorkSheet.get_Range(rangeColumnsNames[dgv.Columns.Count]).Cells;
-            rng.NumberFormat = "@";
+                };
+                Excel.Range rng = xlWorkSheet.get_Range(rangeColumnsNames[dgv.Columns.Count]).Cells;
+                rng.NumberFormat = "@";
 
-            for (int i = 0; i < dgv.Columns.Count; i++)
+                for (int i = 0; i < dgv.Columns.Count; i++)
+                {
+                    var column = dgv.Columns[i];
+
+                    xlWorkSheet.Cells[1, i + 2] = column.HeaderCell.Value.ToString();
+                }
+
+                // Paste clipboard results to worksheet range
+                Excel.Range CR = (Excel.Range)xlWorkSheet.Cells[2, 1];
+                CR.Select();
+                xlWorkSheet.PasteSpecial(CR, Type.Missing, Type.Missing, Type.Missing, Type.Missing, Type.Missing, true);
+
+                // For some reason column A is always blank in the worksheet. ¯\_(ツ)_/¯
+                // Delete blank column A and select cell A1
+                Excel.Range delRng = xlWorkSheet.get_Range("A:A").Cells;
+                delRng.Delete(Type.Missing);
+                xlWorkSheet.get_Range("A1").Select();
+
+                // Save the excel file under the captured location from the SaveFileDialog
+                xlWorkBook.SaveAs(path, Excel.XlFileFormat.xlWorkbookNormal, misValue, misValue, misValue, misValue, Excel.XlSaveAsAccessMode.xlExclusive, misValue, misValue, misValue, misValue, misValue);
+                xlexcel.DisplayAlerts = true;
+                xlWorkBook.Close(true, misValue, misValue);
+                xlexcel.Quit();
+
+                ReleaseObject(xlWorkSheet);
+                ReleaseObject(xlWorkBook);
+                ReleaseObject(xlexcel);
+
+                // Clear Clipboard and DataGridView selection
+                Clipboard.Clear();
+                dgv.ClearSelection();
+                dgv.MultiSelect = false;
+                hasUnsavedChanges = false;
+            }
+            catch(Exception ex)
             {
-                var column = dgv.Columns[i];
-
-                xlWorkSheet.Cells[1, i + 2] = column.HeaderCell.Value.ToString();
+                MessageBox.Show(ex.Message);
             }
 
-            // Paste clipboard results to worksheet range
-            Excel.Range CR = (Excel.Range)xlWorkSheet.Cells[2, 1];
-            CR.Select();
-            xlWorkSheet.PasteSpecial(CR, Type.Missing, Type.Missing, Type.Missing, Type.Missing, Type.Missing, true);
-
-            // For some reason column A is always blank in the worksheet. ¯\_(ツ)_/¯
-            // Delete blank column A and select cell A1
-            Excel.Range delRng = xlWorkSheet.get_Range("A:A").Cells;
-            delRng.Delete(Type.Missing);
-            xlWorkSheet.get_Range("A1").Select();
-
-            // Save the excel file under the captured location from the SaveFileDialog
-            xlWorkBook.SaveAs(path, Excel.XlFileFormat.xlWorkbookNormal, misValue, misValue, misValue, misValue, Excel.XlSaveAsAccessMode.xlExclusive, misValue, misValue, misValue, misValue, misValue);
-            xlexcel.DisplayAlerts = true;
-            xlWorkBook.Close(true, misValue, misValue);
-            xlexcel.Quit();
-
-            ReleaseObject(xlWorkSheet);
-            ReleaseObject(xlWorkBook);
-            ReleaseObject(xlexcel);
-
-            // Clear Clipboard and DataGridView selection
-            Clipboard.Clear();
-            dgv.ClearSelection();
-            dgv.MultiSelect = false;
-            hasUnsavedChanges = false;
         }
 
         private void ReleaseObject(object obj)
@@ -376,10 +393,6 @@ namespace FiasParserGUI
                 lblRowIndex.Text = "Номер строки: " + (rowIndex + 1).ToString();
                 lblStatus.Text = "Статус: " + dgvContent[STATUS_FIELD, rowIndex].Value?.ToString();
 
-                cbCity.Items.Clear();
-                cbStreet.Items.Clear();
-                cbHouse.Items.Clear();
-
                 cbRegion.Text = dgvContent[REGION_FIELD, rowIndex].Value?.ToString(); 
 
                 cbCity.Text = dgvContent[CITY_FIELD, rowIndex].Value?.ToString();
@@ -508,77 +521,84 @@ namespace FiasParserGUI
         private void cbRegion_SelectedIndexChanged(object sender, EventArgs e)
         {
             var region = cbRegion.SelectedItem as ObjectNode;
-            if (cbRegion.SelectedIndex == -1 || region == null) return;
+            if (cbRegion.SelectedIndex == -1 || region == null ) return;
+
+            cbCity.Items.Clear();
 
             cbCity.SelectedIndex = -1;
 
-            string district = null;
-            lock (forLock)
+            try
             {
-                district = (from d in parser.DataContext.District
-                            where d.Region == region.Name
-                            select d.District1).FirstOrDefault();
-
-            tbDistrict.Text = district;
+                tbDistrict.Text = districts[region.Name];
+            }
+            catch(KeyNotFoundException)
+            {
+                tbDistrict.Text = "";
+            }
 
             Thread th = new Thread(SetCityByRegion);
-            th.Start();
-        }
+            threads.Push(threads.Count, Thread.CurrentThread);
+            th.Start();        
         }
 
         private void SetCityByRegion()
         {
-
-            ObjectNode region = null;
-            cbRegion.Invoke((MethodInvoker)(() => region = cbRegion.SelectedItem as ObjectNode));
-
-            if (region == null) return;
-
-            cbCity.Invoke((MethodInvoker)(() => cbCity.Items.Clear()));
-            cbCity.Invoke((MethodInvoker)(() => cbCity.SelectedIndex = -1));
-
-            lblLoading.Invoke((MethodInvoker)(() => lblLoading.Visible = true));
-            lblLoading.Invoke((MethodInvoker)(() => lblLoading.Text = "Загрузка всех городов в " + region.ToString() + "."));
-
-
-            var finded = new List<ObjectNode>();
-            foreach (var f in GetObjectsByParent(region.Guid))
+            lock (forLock)
             {
-                if (f.AOLevel == 3)
+                if (threads.Count > 0 && threads[threads.Count - 1] != Thread.CurrentThread) return;
+                ObjectNode region = null;
+                cbRegion.Invoke((MethodInvoker)(() => region = cbRegion.SelectedItem as ObjectNode));
+
+                if (region == null) return;
+
+                cbCity.Invoke((MethodInvoker)(() => cbCity.Items.Clear()));
+                cbCity.Invoke((MethodInvoker)(() => cbCity.SelectedIndex = -1));
+
+                lblLoading.Invoke((MethodInvoker)(() => lblLoading.Visible = true));
+                lblLoading.Invoke((MethodInvoker)(() => lblLoading.Text = "Загрузка всех городов в " + region.ToString() + "."));
+
+
+                var finded = new List<ObjectNode>();
+                foreach (var f in GetObjectsByParent(region.Guid))
                 {
-                    foreach (var city in GetObjectsByParent(f.Guid))
+                    if (f.AOLevel == 3)
                     {
-                        finded.Add(city);
+                        foreach (var city in GetObjectsByParent(f.Guid))
+                        {
+                            finded.Add(city);
+                        }
                     }
+                    else
+                    {
+                        finded.Add(f);
+                    }
+                }
+
+                if (CITIES_LIKE_REGION.Contains(region.ToString()))
+                {
+                    for (int i = 0; i < finded.Count; i++)
+                    {
+                        var cur = finded[i] as ObjectNode;
+
+                        if (cur?.AOLevel == 4 || cur?.AOLevel == 3)
+                        {
+                            cbCity.Invoke((MethodInvoker)(() => cbCity.Items.Add(cur)));
+                        }
+                    }
+
+                    cbCity.Invoke((MethodInvoker)(() => cbCity.Items.Add(region)));
                 }
                 else
                 {
-                    finded.Add(f);
-                }
-            }
-
-            if (CITIES_LIKE_REGION.Contains(region.ToString()))
-            {
-                for (int i = 0; i < finded.Count; i++)
-                {
-                    var cur = finded[i] as ObjectNode;
-
-                    if (cur?.AOLevel == 4 || cur?.AOLevel == 3)
+                    foreach (var item in finded)
                     {
-                        cbCity.Invoke((MethodInvoker)(() => cbCity.Items.Add(cur)));
+                        cbCity.Invoke((MethodInvoker)(() => cbCity.Items.Add(item)));
                     }
                 }
+                lblLoading.Invoke((MethodInvoker)(() => lblLoading.Visible = false));
 
-                cbCity.Invoke((MethodInvoker)(() => cbCity.Items.Add(region)));
+                threads.TryRemove(threads.Count-1);
             }
-            else
-            {
-                foreach (var item in finded)
-                {
-                    cbCity.Invoke((MethodInvoker)(() => cbCity.Items.Add(item)));
-                }
-            }
-            lblLoading.Invoke((MethodInvoker)(() => lblLoading.Visible = false));
         }
 
         private void SetStreetsByCity()
@@ -643,15 +663,18 @@ namespace FiasParserGUI
         {
             if (cbCity.SelectedIndex == -1) return;
 
+            cbStreet.Items.Clear();
             Thread th = new Thread(SetStreetsByCity);
             th.Start();
         }
 
         private void cbStreet_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (cbStreet.SelectedIndex == -1) return;
+            if (cbStreet.SelectedIndex == -1) return;;
+            cbHouse.Items.Clear();
             Thread th = new Thread(SetHousesByStreet);
             th.Start();
         }
+
     }
 }
