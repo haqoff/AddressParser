@@ -31,6 +31,9 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>res.ico</ApplicationIcon>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -46,6 +49,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ProgressTimer.cs" />
+    <Compile Include="StackThreadExecutor.cs" />
     <Compile Include="FiasParserForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -147,6 +152,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="About GUI.txt" />
+    <Content Include="res.ico" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\FiasParserLib\FiasParserLib.csproj">

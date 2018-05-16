@@ -1,10 +1,9 @@
 ﻿using FiasParserLib;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
+using System.Drawing;
 using System.Linq;
-using System.Threading;
 using System.Windows.Forms;
 using Excel = Microsoft.Office.Interop.Excel;
 
@@ -16,11 +15,11 @@ namespace FiasParserGUI
         private static object forLock = new object();
 
         private bool fileOpened;
+        private bool savingRightNow;
         private string openedFilePath;
         private bool hasUnsavedChanges;
         private Dictionary<string, string> districts;
-        private ConcurrentQueue<Thread> threads;
-
+        private StackThreadExecutor threadExecutor;
 
         public const string DISTRICT_FIELD = "Округ";
         public const string REGION_FIELD = "Область";
@@ -29,7 +28,7 @@ namespace FiasParserGUI
         public const string HOUSE_FIELD = "Дом";
         public const string STATUS_FIELD = "Статус";
 
-        public readonly string[] CITIES_LIKE_REGION = { "г Москва", "г Санкт-Петербург", "г Барнаул","г Севастополь" };
+        public readonly string[] CITIES_LIKE_REGION = { "г Москва", "г Санкт-Петербург", "г Барнаул", "г Севастополь" };
 
 
         public MainForm(FiasParser parser)
@@ -39,14 +38,15 @@ namespace FiasParserGUI
 
             fileOpened = false;
             hasUnsavedChanges = false;
+            savingRightNow = false;
 
             dgvContent.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             dgvContent.AllowUserToDeleteRows = false;
             dgvContent.AllowUserToAddRows = false;
-            dgvContent.AllowUserToOrderColumns = false;
+            dgvContent.AllowUserToOrderColumns = true;
             dgvContent.RowHeadersWidth = 70;
 
-            threads = new ConcurrentQueue<Thread>();
+            threadExecutor = new StackThreadExecutor();
             districts = new Dictionary<string, string>();
             foreach (var item in parser.DataContext.District)
             {
@@ -66,6 +66,7 @@ namespace FiasParserGUI
         {
             try
             {
+                savingRightNow = true;
                 dgv.MultiSelect = true;
                 // Copy DataGridView results to clipboard
                 dgv.SelectAll();
@@ -111,6 +112,11 @@ namespace FiasParserGUI
                     "Y:Y",
                     "Z:Z"
                 };
+                if (dgv.Columns.Count > rangeColumnsNames.Length)
+                    throw new Exception(string.Format("Количество столбцов {0} превышает допустимый предел для сохранения {1}."
+                        , dgv.Columns.Count, rangeColumnsNames.Length));
+                    
+
                 Excel.Range rng = xlWorkSheet.get_Range(rangeColumnsNames[dgv.Columns.Count]).Cells;
                 rng.NumberFormat = "@";
 
@@ -133,8 +139,10 @@ namespace FiasParserGUI
                 xlWorkSheet.get_Range("A1").Select();
 
                 // Save the excel file under the captured location from the SaveFileDialog
-                xlWorkBook.SaveAs(path, Excel.XlFileFormat.xlWorkbookNormal, misValue, misValue, misValue, misValue, Excel.XlSaveAsAccessMode.xlExclusive, misValue, misValue, misValue, misValue, misValue);
-                xlexcel.DisplayAlerts = true;
+                xlexcel.DisplayAlerts = false;
+                xlWorkBook.SaveAs(Excel.XlFileFormat.xlWorkbookDefault, Type.Missing, Type.Missing, true, false, Excel.XlSaveAsAccessMode.xlNoChange, Excel.XlSaveAsAccessMode.xlNoChange, Type.Missing, Type.Missing);
+                //xlWorkBook.SaveAs(path, Excel.XlFileFormat.xlWorkbookNormal, misValue, misValue, misValue, misValue, Excel.XlSaveAsAccessMode.xlExclusive, misValue, misValue, misValue, misValue, misValue);
+                
                 xlWorkBook.Close(true, misValue, misValue);
                 xlexcel.Quit();
 
@@ -148,11 +156,14 @@ namespace FiasParserGUI
                 dgv.MultiSelect = false;
                 hasUnsavedChanges = false;
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                MessageBox.Show(ex.Message);
+                MessageBox.Show(ex.Message, "Ошибка при сохранении файла.", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-
+            finally
+            {
+                savingRightNow = false;
+            }
         }
 
         private void ReleaseObject(object obj)
@@ -249,6 +260,12 @@ namespace FiasParserGUI
         /// <returns>Возвращает true, если файл был закрыт, иначе false.</returns>
         private bool TryCloseFile()
         {
+            if (savingRightNow)
+            {
+                MessageBox.Show("Не возможно закрыть файл.\nВ данный момент идёт сохранение этого файла.");
+                return false;
+            }
+
             var cautionMessage = "Имеются несохранённые изменения!\nВы точно хотите выйти?";
             if (hasUnsavedChanges &&
                 MessageBox.Show(cautionMessage, "Предупреждение", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning)
@@ -390,10 +407,11 @@ namespace FiasParserGUI
             if (dgvContent.SelectedCells.Count > 0 && CheckTableForParsedData(dgvContent))
             {
                 var rowIndex = dgvContent.SelectedCells[0].RowIndex;
+
                 lblRowIndex.Text = "Номер строки: " + (rowIndex + 1).ToString();
                 lblStatus.Text = "Статус: " + dgvContent[STATUS_FIELD, rowIndex].Value?.ToString();
 
-                cbRegion.Text = dgvContent[REGION_FIELD, rowIndex].Value?.ToString(); 
+                cbRegion.Text = dgvContent[REGION_FIELD, rowIndex].Value?.ToString();
 
                 cbCity.Text = dgvContent[CITY_FIELD, rowIndex].Value?.ToString();
                 cbStreet.Text = dgvContent[STREET_FIELD, rowIndex].Value?.ToString();
@@ -458,7 +476,7 @@ namespace FiasParserGUI
 
         private void OnTextChanged(object sender, EventArgs e)
         {
-            if (CheckTableForParsedData(dgvContent)&&dgvContent.SelectedCells.Count > 0)
+            if (CheckTableForParsedData(dgvContent) && dgvContent.SelectedCells.Count > 0)
             {
                 int rowIndex = dgvContent.SelectedCells[0].RowIndex;
 
@@ -470,7 +488,7 @@ namespace FiasParserGUI
 
 
 
-                if (!string.IsNullOrWhiteSpace(dgvContent[DISTRICT_FIELD,rowIndex].Value?.ToString())
+                if (!string.IsNullOrWhiteSpace(dgvContent[DISTRICT_FIELD, rowIndex].Value?.ToString())
                     && !string.IsNullOrWhiteSpace(dgvContent[REGION_FIELD, rowIndex].Value?.ToString())
                     && !string.IsNullOrWhiteSpace(dgvContent[CITY_FIELD, rowIndex].Value?.ToString())
                     && !string.IsNullOrWhiteSpace(dgvContent[STREET_FIELD, rowIndex].Value?.ToString())
@@ -486,7 +504,7 @@ namespace FiasParserGUI
 
         private void SetIfEquals(object sender, Control t, string columnName, int rowIndex)
         {
-            if (sender == t && t.Text!=null)
+            if (sender == t && t.Text != null)
             {
                 dgvContent[columnName, rowIndex].Value = t.Text;
             }
@@ -521,7 +539,7 @@ namespace FiasParserGUI
         private void cbRegion_SelectedIndexChanged(object sender, EventArgs e)
         {
             var region = cbRegion.SelectedItem as ObjectNode;
-            if (cbRegion.SelectedIndex == -1 || region == null ) return;
+            if (cbRegion.SelectedIndex == -1 || region == null) return;
 
             cbCity.Items.Clear();
 
@@ -531,74 +549,66 @@ namespace FiasParserGUI
             {
                 tbDistrict.Text = districts[region.Name];
             }
-            catch(KeyNotFoundException)
+            catch (KeyNotFoundException)
             {
                 tbDistrict.Text = "";
             }
 
-            Thread th = new Thread(SetCityByRegion);
-            threads.Push(threads.Count, Thread.CurrentThread);
-            th.Start();        
+            threadExecutor.Bind(SetCityByRegion);
         }
 
         private void SetCityByRegion()
         {
-            lock (forLock)
+            ObjectNode region = null;
+            cbRegion.Invoke((MethodInvoker)(() => region = cbRegion.SelectedItem as ObjectNode));
+
+            if (region == null) return;
+
+            cbCity.Invoke((MethodInvoker)(() => cbCity.Items.Clear()));
+            cbCity.Invoke((MethodInvoker)(() => cbCity.SelectedIndex = -1));
+
+            lblLoading.Invoke((MethodInvoker)(() => lblLoading.Visible = true));
+            lblLoading.Invoke((MethodInvoker)(() => lblLoading.Text = "Загрузка всех городов в " + region.ToString() + "."));
+
+
+            var finded = new List<ObjectNode>();
+            foreach (var f in GetObjectsByParent(region.Guid))
             {
-                if (threads.Count > 0 && threads[threads.Count - 1] != Thread.CurrentThread) return;
-                ObjectNode region = null;
-                cbRegion.Invoke((MethodInvoker)(() => region = cbRegion.SelectedItem as ObjectNode));
-
-                if (region == null) return;
-
-                cbCity.Invoke((MethodInvoker)(() => cbCity.Items.Clear()));
-                cbCity.Invoke((MethodInvoker)(() => cbCity.SelectedIndex = -1));
-
-                lblLoading.Invoke((MethodInvoker)(() => lblLoading.Visible = true));
-                lblLoading.Invoke((MethodInvoker)(() => lblLoading.Text = "Загрузка всех городов в " + region.ToString() + "."));
-
-
-                var finded = new List<ObjectNode>();
-                foreach (var f in GetObjectsByParent(region.Guid))
+                if (f.AOLevel == 3)
                 {
-                    if (f.AOLevel == 3)
+                    foreach (var city in GetObjectsByParent(f.Guid))
                     {
-                        foreach (var city in GetObjectsByParent(f.Guid))
-                        {
-                            finded.Add(city);
-                        }
+                        finded.Add(city);
                     }
-                    else
-                    {
-                        finded.Add(f);
-                    }
-                }
-
-                if (CITIES_LIKE_REGION.Contains(region.ToString()))
-                {
-                    for (int i = 0; i < finded.Count; i++)
-                    {
-                        var cur = finded[i] as ObjectNode;
-
-                        if (cur?.AOLevel == 4 || cur?.AOLevel == 3)
-                        {
-                            cbCity.Invoke((MethodInvoker)(() => cbCity.Items.Add(cur)));
-                        }
-                    }
-
-                    cbCity.Invoke((MethodInvoker)(() => cbCity.Items.Add(region)));
                 }
                 else
                 {
-                    foreach (var item in finded)
+                    finded.Add(f);
+                }
+            }
+
+            if (CITIES_LIKE_REGION.Contains(region.ToString()))
+            {
+                for (int i = 0; i < finded.Count; i++)
+                {
+                    var cur = finded[i] as ObjectNode;
+
+                    if (cur?.AOLevel == 4 || cur?.AOLevel == 3)
                     {
-                        cbCity.Invoke((MethodInvoker)(() => cbCity.Items.Add(item)));
+                        cbCity.Invoke((MethodInvoker)(() => cbCity.Items.Add(cur)));
                     }
                 }
-                lblLoading.Invoke((MethodInvoker)(() => lblLoading.Visible = false));
 
-                threads.TryRemove(threads.Count-1);
+                cbCity.Invoke((MethodInvoker)(() => cbCity.Items.Add(region)));
             }
+            else
+            {
+                foreach (var item in finded)
+                {
+                    cbCity.Invoke((MethodInvoker)(() => cbCity.Items.Add(item)));
+                }
+            }
+            lblLoading.Invoke((MethodInvoker)(() => lblLoading.Visible = false));
         }
 
         private void SetStreetsByCity()
@@ -638,18 +648,16 @@ namespace FiasParserGUI
                 lblLoading.Invoke((MethodInvoker)(() => lblLoading.Visible = true));
                 lblLoading.Invoke((MethodInvoker)(() => lblLoading.Text = "Загрузка всех домов на " + street.ToString() + "."));
 
-                lock (forLock)
-                {
-                    var houses = (from h in parser.DataContext.House
-                                  where h.AOGUID == street.Guid
-                                  select new ObjectNode(h.HOUSEGUID, h.HOUSENUM, TableType.House, street.Guid, street)
-                             ).ToList().Distinct(new ObjectNode.ByNameComparer());
+                var houses = (from h in parser.DataContext.House
+                              where h.AOGUID == street.Guid
+                              select new ObjectNode(h.HOUSEGUID, h.HOUSENUM, TableType.House, street.Guid, street)
+                         ).ToList().Distinct(new ObjectNode.ByNameComparer());
 
-                    foreach (var h in houses)
-                    {
-                        cbHouse.Invoke((MethodInvoker)(() => cbHouse.Items.Add(h)));
-                    }
+                foreach (var h in houses)
+                {
+                    cbHouse.Invoke((MethodInvoker)(() => cbHouse.Items.Add(h)));
                 }
+
 
                 lblLoading.Invoke((MethodInvoker)(() => lblLoading.Visible = false));
             }
@@ -664,17 +672,49 @@ namespace FiasParserGUI
             if (cbCity.SelectedIndex == -1) return;
 
             cbStreet.Items.Clear();
-            Thread th = new Thread(SetStreetsByCity);
-            th.Start();
+            threadExecutor.Bind(SetStreetsByCity);
         }
+
 
         private void cbStreet_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (cbStreet.SelectedIndex == -1) return;;
+            if (cbStreet.SelectedIndex == -1) return; 
             cbHouse.Items.Clear();
-            Thread th = new Thread(SetHousesByStreet);
-            th.Start();
+            threadExecutor.Bind(SetHousesByStreet);
         }
 
+        private void dgvContent_Sorted(object sender, EventArgs e)
+        {
+            int i = 0;
+            foreach (DataGridViewRow row in dgvContent.Rows)
+            {
+                row.HeaderCell.Value = (++i).ToString();
+            }
+        }
+
+        private void MainForm_Resize(object sender, EventArgs e)
+        {
+            //dgvContenct 1327; 564 - 0,78941106484235574063057703747769;0,80864197530864197530864197530864
+            //Form 1681; 648
+
+            dgvContent.Size = new Size()
+            {
+                Width = (int)(Size.Width * 0.78941106484235574063057703747769f),
+                Height = (int)(Size.Height * 0.80864197530864197530864197530864f)
+            };
+
+            //pside location - 1349; 32 - 332;    size - 315; 564
+            pSide.Location = new Point()
+            {
+                X = Size.Width - 332,
+                Y = 32
+            };
+
+            pSide.Size = new Size()
+            {
+                Width = 315,
+                Height = Size.Height - 84
+            };
+        }
     }
 }

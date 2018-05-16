@@ -193,9 +193,9 @@ namespace FiasParserGUI
                         }
 
                         sb.Clear();
-                        sb.Append("Необходимо исправлять: ");
+                        sb.Append("Cтрок со статусом PROBLEMS: ");
                         sb.Append(countToFix);
-                        sb.Append('/');
+                        sb.Append(" из ");
                         sb.Append(i + 1);
                         lblCountToFix.Invoke((MethodInvoker)(() => lblCountToFix.Text = sb.ToString()));
                     }
