@@ -40,12 +40,6 @@ namespace FiasParserGUI
             hasUnsavedChanges = false;
             savingRightNow = false;
 
-            dgvContent.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
-            dgvContent.AllowUserToDeleteRows = false;
-            dgvContent.AllowUserToAddRows = false;
-            dgvContent.AllowUserToOrderColumns = true;
-            dgvContent.RowHeadersWidth = 70;
-
             threadExecutor = new StackThreadExecutor();
             districts = new Dictionary<string, string>();
             foreach (var item in parser.DataContext.District)
@@ -140,9 +134,10 @@ namespace FiasParserGUI
 
                 // Save the excel file under the captured location from the SaveFileDialog
                 xlexcel.DisplayAlerts = false;
-                xlWorkBook.SaveAs(Excel.XlFileFormat.xlWorkbookDefault, Type.Missing, Type.Missing, true, false, Excel.XlSaveAsAccessMode.xlNoChange, Excel.XlSaveAsAccessMode.xlNoChange, Type.Missing, Type.Missing);
+
+                xlWorkBook.SaveAs(path, Excel.XlFileFormat.xlWorkbookDefault, Type.Missing, Type.Missing, true, false, Excel.XlSaveAsAccessMode.xlNoChange, Excel.XlSaveConflictResolution.xlLocalSessionChanges, Type.Missing, Type.Missing);
                 //xlWorkBook.SaveAs(path, Excel.XlFileFormat.xlWorkbookNormal, misValue, misValue, misValue, misValue, Excel.XlSaveAsAccessMode.xlExclusive, misValue, misValue, misValue, misValue, misValue);
-                
+
                 xlWorkBook.Close(true, misValue, misValue);
                 xlexcel.Quit();
 
@@ -694,27 +689,44 @@ namespace FiasParserGUI
 
         private void MainForm_Resize(object sender, EventArgs e)
         {
-            //dgvContenct 1327; 564 - 0,78941106484235574063057703747769;0,80864197530864197530864197530864
-            //Form 1681; 648
+            //dgvContenctsize - 995; 458
+            //Form 1267; 524
+            //
 
             dgvContent.Size = new Size()
             {
-                Width = (int)(Size.Width * 0.78941106484235574063057703747769f),
-                Height = (int)(Size.Height * 0.80864197530864197530864197530864f)
+                Width = Size.Width - 272,
+                Height = Size.Height - 66
             };
 
-            //pside location - 1349; 32 - 332;    size - 315; 564
+            //pside location - size 236; 458 - location 1015; 25
             pSide.Location = new Point()
             {
-                X = Size.Width - 332,
-                Y = 32
+                X = Size.Width - 252,
+                Y = 26
             };
 
-            pSide.Size = new Size()
+            pSide.Size = new Size() //236; 458
             {
-                Width = 315,
-                Height = Size.Height - 84
+                Width = 236,
+                Height = Size.Height - 66
             };
+        }
+
+        private void MainForm_Load(object sender, EventArgs e)
+        {
+
+            dgvContent.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+            dgvContent.ReadOnly = false;
+            dgvContent.AllowUserToDeleteRows = true;
+            dgvContent.AllowUserToAddRows = false;
+            dgvContent.AllowUserToOrderColumns = true;
+            dgvContent.RowHeadersWidth = 70;
+        }
+
+        private void dgvContent_ColumnAdded(object sender, DataGridViewColumnEventArgs e)
+        {
+            e.Column.SortMode = DataGridViewColumnSortMode.Automatic;
         }
     }
 }

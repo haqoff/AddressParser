@@ -50,6 +50,12 @@ namespace FiasParserLib
     partial void DeleteDimShops(DimShops instance);
     #endregion
 		
+		public FiasClassesDataContext() : 
+				base(global::FiasParserLib.Properties.Settings.Default.fiasConnectionString, mappingSource)
+		{
+			OnCreated();
+		}
+		
 		public FiasClassesDataContext(string connection) : 
 				base(connection, mappingSource)
 		{

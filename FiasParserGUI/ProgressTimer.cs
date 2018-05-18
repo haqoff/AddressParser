@@ -46,11 +46,6 @@ namespace FiasParserGUI
         }
 
 
-
-
-
-        pu
-
         public void Iterate(int n)
         {
 
